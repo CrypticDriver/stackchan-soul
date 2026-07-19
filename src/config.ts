@@ -52,6 +52,18 @@ export interface SoulConfig {
    *  wakes the soul before its alarm. Wire body events (face detected,
    *  device picked up) or anything else into it. */
   nudge?: { port: number };
+  /** Optional web-search sense via an MCP gateway (JSON-RPC tools/call).
+   *  auth: "aws-sigv4" for Bedrock AgentCore gateways (uses default AWS
+   *  credential chain), or omit and set token for Bearer auth. */
+  worldSearch?: {
+    url: string;
+    toolName: string; // e.g. "web-search-tool___WebSearch"
+    auth?: "aws-sigv4" | "bearer";
+    region?: string;
+    service?: string;
+    token?: string;
+    maxResults?: number;
+  };
   log: { streamThoughts: boolean };
 }
 

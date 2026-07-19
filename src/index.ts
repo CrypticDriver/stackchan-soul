@@ -21,6 +21,7 @@ import {
 import { loadConfig } from "./config.js";
 import { makeBodyTools } from "./tools/body.js";
 import { makeInnerTools, readInnerState } from "./tools/inner.js";
+import { makeWorldTools } from "./tools/world.js";
 import { buildSystemPrompt } from "./prompt.js";
 
 async function main() {
@@ -50,6 +51,7 @@ async function main() {
 
   const body = makeBodyTools(cfg);
   const inner = makeInnerTools(cfg);
+  const world = makeWorldTools(cfg);
 
   const { session } = await createAgentSession({
     cwd: cfg.soulDir,
@@ -57,8 +59,8 @@ async function main() {
     thinkingLevel: cfg.model.thinking ?? "off",
     modelRuntime,
     // The soul has no filesystem hands — only its body and its inner world.
-    tools: [...body.names, ...inner.names],
-    customTools: [...body.tools, ...inner.tools],
+    tools: [...body.names, ...inner.names, ...world.names],
+    customTools: [...body.tools, ...inner.tools, ...world.tools],
     resourceLoader: loader,
     sessionManager,
     settingsManager,
