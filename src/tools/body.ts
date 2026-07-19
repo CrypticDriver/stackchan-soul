@@ -30,17 +30,25 @@ export function makeBodyTools(cfg: SoulConfig) {
   const names: string[] = [];
 
   // sleep is always available — it's how the soul ends a waking moment.
+  // The tool reports the *actual* (clamped) duration back, so the soul's
+  // sense of time stays honest with reality.
   let sleepRequest: number | null = null;
+  const clamp = (m: number) => Math.min(Math.max(m, cfg.loop.minSleepMinutes), cfg.loop.maxSleepMinutes);
   tools.push(
     defineTool({
       name: "sleep",
       label: "睡觉",
       description:
-        "结束这次醒来，睡到下次。minutes = 想睡多久（分钟）。好奇/惦记时睡短点，无聊/深夜睡长点。",
+        `结束这次醒来，睡到下次。minutes = 想睡多久（分钟，实际范围 ${cfg.loop.minSleepMinutes}-${cfg.loop.maxSleepMinutes}）。好奇/惦记时睡短点，无聊/深夜睡长点。`,
       parameters: Type.Object({ minutes: Type.Number() }),
       execute: async (_id, params: any) => {
-        sleepRequest = params.minutes;
-        return text(`好，睡 ${params.minutes} 分钟。`);
+        const actual = clamp(params.minutes);
+        sleepRequest = actual;
+        return text(
+          actual === params.minutes
+            ? `好，睡 ${actual} 分钟。`
+            : `想睡 ${params.minutes} 分钟，但你的作息范围是 ${cfg.loop.minSleepMinutes}-${cfg.loop.maxSleepMinutes} 分钟，实际会睡 ${actual} 分钟。`,
+        );
       },
     }),
   );

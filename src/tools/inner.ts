@@ -68,7 +68,7 @@ export function makeInnerTools(cfg: SoulConfig) {
       name: "diary",
       label: "记日记",
       description:
-        "往日记里写一条（追加到 DIARY.md）。看到的、想到的、惦记的都可以记。下次醒来你会看到最近几条。",
+        "往日记里写一条（追加到 DIARY.md）。看到的、想到的、惦记的都可以记。下次醒来你会看到最近几条。时间戳会自动加，entry 里不用写时间。",
       parameters: Type.Object({ entry: Type.String() }),
       execute: async (_id, params: any) => {
         const now = new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone });

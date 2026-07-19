@@ -87,6 +87,8 @@ Implement any subset of these endpoints and list them in `soul.config.json` — 
 
 `sleep(minutes)` is always available — it's how every waking moment ends.
 
+**Waking the soul from outside**: enable `nudge: {port: N}` in config and anything on the host can `POST {"reason": "..."} → 127.0.0.1:N/nudge` to rouse the soul before its alarm — face detected, device picked up, a message arrived. Like a noise waking you mid-dream: the soul sees the reason and decides whether it deserves attention.
+
 ## Key files
 
 | File | Purpose |
