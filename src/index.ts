@@ -81,7 +81,7 @@ async function main() {
   let rouse: ((reason: string) => void) | null = null;
   if (cfg.nudge?.port) {
     const { createServer } = await import("http");
-    createServer((req, res) => {
+    const nudgeServer = createServer((req, res) => {
       if (req.method === "POST" && req.url === "/nudge") {
         let raw = "";
         req.on("data", (c) => (raw += c));
@@ -97,7 +97,13 @@ async function main() {
         res.statusCode = 404;
         res.end();
       }
-    }).listen(cfg.nudge.port, "127.0.0.1");
+    });
+    // Old process may hold the port for a moment during restarts — retry.
+    nudgeServer.on("error", (e: any) => {
+      if (e.code === "EADDRINUSE") setTimeout(() => nudgeServer.listen(cfg.nudge!.port, "127.0.0.1"), 3000);
+      else console.error("[soul] nudge server error:", e);
+    });
+    nudgeServer.listen(cfg.nudge.port, "127.0.0.1");
     console.log(`[soul] nudge endpoint on 127.0.0.1:${cfg.nudge.port}/nudge`);
   }
 
@@ -108,6 +114,22 @@ async function main() {
   // cut sleep short, like a noise waking you before the alarm.
   console.log(`[soul] awakening. body=${cfg.body.name} model=${cfg.model.provider}/${cfg.model.id}`);
   let wakeReason = "进程启动（你刚醒来，也许睡了很久）";
+  let thinking = false; // is the loop currently inside session.prompt()?
+
+  // ---- Unified dialog (v2): the human's words join THIS session ----
+  if (cfg.converse?.port) {
+    const { startConverse } = await import("./converse.js");
+    startConverse(cfg, session as any, {
+      isThinking: () => thinking,
+      rouse: (reason: string) => {
+        if (rouse) {
+          rouse(reason);
+          return true;
+        }
+        return false;
+      },
+    });
+  }
 
   while (true) {
     const state = await readInnerState(cfg);
@@ -121,10 +143,13 @@ async function main() {
     let sleptMinutes = cfg.loop.defaultSleepMinutes;
     try {
       body.resetSleepRequest();
+      thinking = true;
       await session.prompt(nudge);
+      thinking = false;
       const req = body.consumeSleepRequest();
       if (req !== null) sleptMinutes = req;
     } catch (e) {
+      thinking = false;
       console.error("[soul] turn failed:", e);
       sleptMinutes = cfg.loop.errorSleepMinutes; // rest longer after a bad turn
     }

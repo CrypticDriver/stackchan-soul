@@ -52,6 +52,10 @@ export interface SoulConfig {
    *  wakes the soul before its alarm. Wire body events (face detected,
    *  device picked up) or anything else into it. */
   nudge?: { port: number };
+  /** Unified dialog (v2): OpenAI-compatible endpoint on 127.0.0.1:<port>.
+   *  The human's words join the SAME session — asleep: wakes it; awake:
+   *  steers mid-thought. One consciousness, no separate dialog agent. */
+  converse?: { port: number };
   /** Optional web-search sense via an MCP gateway (JSON-RPC tools/call).
    *  auth: "aws-sigv4" for Bedrock AgentCore gateways (uses default AWS
    *  credential chain), or omit and set token for Bearer auth. */
