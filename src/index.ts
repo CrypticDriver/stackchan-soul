@@ -72,10 +72,38 @@ async function main() {
     });
   }
 
+  // ---- External nudges ----
+  // Life isn't only alarm clocks: events (someone appeared, a message
+  // arrived) can rouse the soul early. Anything on this host can
+  // POST {reason} to /nudge — body adapters, sensor bridges, cron, humans.
+  let rouse: ((reason: string) => void) | null = null;
+  if (cfg.nudge?.port) {
+    const { createServer } = await import("http");
+    createServer((req, res) => {
+      if (req.method === "POST" && req.url === "/nudge") {
+        let raw = "";
+        req.on("data", (c) => (raw += c));
+        req.on("end", () => {
+          let reason = "有什么事发生了";
+          try {
+            reason = JSON.parse(raw).reason || reason;
+          } catch {}
+          res.end('{"ok":true}');
+          if (rouse) rouse(reason);
+        });
+      } else {
+        res.statusCode = 404;
+        res.end();
+      }
+    }).listen(cfg.nudge.port, "127.0.0.1");
+    console.log(`[soul] nudge endpoint on 127.0.0.1:${cfg.nudge.port}/nudge`);
+  }
+
   // ---- The consciousness loop ----
   // Each iteration = one moment of being awake.
   // The agent ends its turn by calling sleep(minutes) — that promise's
-  // resolution IS the agent choosing when to wake next.
+  // resolution IS the agent choosing when to wake next. A nudge can
+  // cut sleep short, like a noise waking you before the alarm.
   console.log(`[soul] awakening. body=${cfg.body.name} model=${cfg.model.provider}/${cfg.model.id}`);
   let wakeReason = "进程启动（你刚醒来，也许睡了很久）";
 
@@ -101,8 +129,17 @@ async function main() {
 
     const capped = Math.min(Math.max(sleptMinutes, cfg.loop.minSleepMinutes), cfg.loop.maxSleepMinutes);
     console.log(`\n[soul] sleeping ${capped} min`);
-    wakeReason = `你自己定的闹钟（睡了 ${capped} 分钟）`;
-    await new Promise((r) => setTimeout(r, capped * 60_000));
+    wakeReason = await new Promise<string>((resolve) => {
+      const timer = setTimeout(() => {
+        rouse = null;
+        resolve(`你自己定的闹钟（睡了 ${capped} 分钟）`);
+      }, capped * 60_000);
+      rouse = (reason) => {
+        clearTimeout(timer);
+        rouse = null;
+        resolve(`被叫醒了: ${reason}（原计划睡 ${capped} 分钟，没睡够）`);
+      };
+    });
   }
 }
 

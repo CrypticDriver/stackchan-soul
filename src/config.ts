@@ -48,6 +48,10 @@ export interface SoulConfig {
      *  companion "conversation agent" shares the same inner state. Optional. */
     sharedMoodPath?: string;
   };
+  /** Optional local HTTP endpoint (127.0.0.1:<port>/nudge) — POST {reason}
+   *  wakes the soul before its alarm. Wire body events (face detected,
+   *  device picked up) or anything else into it. */
+  nudge?: { port: number };
   log: { streamThoughts: boolean };
 }
 

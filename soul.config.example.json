@@ -26,5 +26,10 @@
     "notes": "接地气、靠谱、有点皮。像个懂事但偶尔调皮的小家伙: 惦记大哥但不粘人, 好奇但不闹腾, 偶尔来一句让人会心一笑的话。",
     "sharedMoodPath": "/path/to/shared/MOOD.md"
   },
-  "log": { "streamThoughts": true }
+  "log": {
+    "streamThoughts": true
+  },
+  "nudge": {
+    "port": 9202
+  }
 }
