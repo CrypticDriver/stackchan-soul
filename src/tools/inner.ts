@@ -1,7 +1,7 @@
 /**
  * Inner-world tools — the soul's mood and diary.
- * Plain files in soulDir so a companion conversation-agent (e.g. an OpenClaw
- * agent that handles realtime dialog) can share the exact same inner state:
+ * Plain files in soulDir so a companion conversation-agent (whatever
+ * handles realtime dialog) can share the exact same inner state:
  * one soul, two hemispheres.
  */
 import { Type } from "typebox";

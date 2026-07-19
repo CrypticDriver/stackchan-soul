@@ -44,7 +44,7 @@ export interface SoulConfig {
     name: string;
     human: string;
     notes: string;
-    /** Path to a shared mood file (e.g. OpenClaw workspace MOOD.md) so a
+    /** Path to a shared mood file (e.g. a dialog agent's workspace MOOD.md) so a
      *  companion "conversation agent" shares the same inner state. Optional. */
     sharedMoodPath?: string;
   };
