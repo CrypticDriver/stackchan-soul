@@ -46,7 +46,8 @@ MOOD="$SOUL_DIR/MOOD.md"
 # --- C. mechanisms ---
 # pi stores sessions under ~/.pi/agent/sessions/<escaped-cwd>/
 ESCAPED=$(echo "$SOUL_DIR" | sed 's|/|-|g')
-SESS=$(ls -t "$HOME/.pi/agent/sessions/-$ESCAPED-"/*.jsonl 2>/dev/null | head -1)
+SESS=$(ls -t "$HOME/.pi/agent/sessions/$ESCAPED--"/*.jsonl 2>/dev/null | head -1)
+[ -z "$SESS" ] && SESS=$(ls -t "$HOME/.pi/agent/sessions"/*"$(basename $SOUL_DIR)"*/*.jsonl 2>/dev/null | head -1)
 if [ -n "$SESS" ]; then
   SZ=$(du -h "$SESS" | cut -f1)
   COMPACT=$(grep -c '"compaction"' "$SESS" 2>/dev/null)
