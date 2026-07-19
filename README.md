@@ -72,7 +72,15 @@ python3 adapters/stackchan/adapter.py &
 npm start
 ```
 
-Models go through pi-ai (30+ providers: Amazon Bedrock, Anthropic, OpenAI, …). Bedrock uses the AWS default credential chain — no API key needed.
+Models go through pi-ai (30+ providers: Amazon Bedrock, Anthropic, OpenAI, …). Bedrock uses AWS credentials — no API key needed.
+
+> **Bedrock on EC2 (instance role):** pi checks for `AWS_PROFILE` / `AWS_ACCESS_KEY_ID` and doesn't fall through to bare IMDS. Create a profile backed by `credential_process` that reads instance-role creds, then run with `AWS_PROFILE=soul`:
+> ```ini
+> # ~/.aws/config
+> [profile soul]
+> credential_process = /path/to/imds-creds.sh   # emits {Version:1, AccessKeyId, ...} from IMDS
+> region = us-west-2
+> ```
 
 ### Bring your own body
 
