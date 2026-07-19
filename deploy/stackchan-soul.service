@@ -1,0 +1,14 @@
+[Unit]
+Description=stackchan-soul (consciousness loop)
+After=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/stackchan-soul
+Environment=SOUL_CONFIG=/home/ubuntu/stackchan-soul/soul.config.json
+ExecStart=/usr/bin/env npx tsx src/index.ts
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

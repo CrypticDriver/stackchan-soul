@@ -1,0 +1,4 @@
+node_modules/
+dist/
+soul.config.json
+*.log

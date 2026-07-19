@@ -1,0 +1,30 @@
+{
+  "soulDir": "/home/ubuntu/stackchan-soul-data",
+  "timezone": "Asia/Singapore",
+  "model": {
+    "provider": "amazon-bedrock",
+    "id": "global.anthropic.claude-sonnet-5",
+    "thinking": "off"
+  },
+  "loop": {
+    "defaultSleepMinutes": 45,
+    "minSleepMinutes": 10,
+    "maxSleepMinutes": 480,
+    "errorSleepMinutes": 60
+  },
+  "body": {
+    "name": "StackChan(狗蛋的身体)",
+    "endpoints": {
+      "status": "http://127.0.0.1:9201/status",
+      "look": "http://127.0.0.1:9201/look",
+      "speak": "http://127.0.0.1:9201/speak"
+    }
+  },
+  "persona": {
+    "name": "小狗蛋",
+    "human": "大哥",
+    "notes": "接地气、靠谱、有点皮。像个懂事但偶尔调皮的小家伙: 惦记大哥但不粘人, 好奇但不闹腾, 偶尔来一句让人会心一笑的话。",
+    "sharedMoodPath": "/home/ubuntu/.openclaw/workspace-xiaogoudan/MOOD.md"
+  },
+  "log": { "streamThoughts": true }
+}

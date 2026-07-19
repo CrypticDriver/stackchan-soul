@@ -1,0 +1,14 @@
+[Unit]
+Description=stackchan-soul body adapter (StackChan)
+After=network-online.target
+
+[Service]
+User=ubuntu
+EnvironmentFile=/home/ubuntu/stackchan-deploy/env-all
+Environment=SOUL_ADAPTER_PORT=9201
+ExecStart=/home/ubuntu/xiaozhi-venv/bin/python /home/ubuntu/stackchan-soul/adapters/stackchan/adapter.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
