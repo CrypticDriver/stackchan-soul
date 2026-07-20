@@ -137,7 +137,7 @@ async function main() {
       `【醒来】${new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone })}`,
       `醒来原因: ${wakeReason}`,
       `你的内心状态快照:\n${state}`,
-      `想想此刻你想做什么。做完（或决定什么都不做）就调用 sleep 定下次醒来。`,
+      `这段清醒时光是你的——想干嘛干嘛，一件接一件都行，聊天就聊到自然结束。过完了这段，再用 sleep 定下次闹钟。`,
     ].join("\n\n");
 
     let sleptMinutes = cfg.loop.defaultSleepMinutes;
