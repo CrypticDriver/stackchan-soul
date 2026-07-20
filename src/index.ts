@@ -22,6 +22,7 @@ import { loadConfig } from "./config.js";
 import { makeBodyTools } from "./tools/body.js";
 import { makeInnerTools, readInnerState } from "./tools/inner.js";
 import { makeWorldTools } from "./tools/world.js";
+import { makeFutureTools, readFutureState } from "./tools/future.js";
 import { buildSystemPrompt } from "./prompt.js";
 
 async function main() {
@@ -52,6 +53,7 @@ async function main() {
   const body = makeBodyTools(cfg);
   const inner = makeInnerTools(cfg);
   const world = makeWorldTools(cfg);
+  const future = makeFutureTools(cfg);
 
   const { session } = await createAgentSession({
     cwd: cfg.soulDir,
@@ -59,8 +61,8 @@ async function main() {
     thinkingLevel: cfg.model.thinking ?? "off",
     modelRuntime,
     // The soul has no filesystem hands — only its body and its inner world.
-    tools: [...body.names, ...inner.names, ...world.names],
-    customTools: [...body.tools, ...inner.tools, ...world.tools],
+    tools: [...body.names, ...inner.names, ...world.names, ...future.names],
+    customTools: [...body.tools, ...inner.tools, ...world.tools, ...future.tools],
     resourceLoader: loader,
     sessionManager,
     settingsManager,
@@ -131,14 +133,39 @@ async function main() {
     });
   }
 
+  // Passive body sense: probed automatically each waking — senses come
+  // before thought, the soul shouldn't have to *decide* to feel its body.
+  async function senseBody(): Promise<string> {
+    const ep = cfg.body.endpoints.status;
+    if (!ep) return "（这具身体没有在线感应）";
+    try {
+      const res = await fetch(ep, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(cfg.body.token ? { Authorization: `Bearer ${cfg.body.token}` } : {}) },
+        body: "{}",
+        signal: AbortSignal.timeout(5000),
+      });
+      const d: any = await res.json().catch(() => ({}));
+      return d.online ? "身体醒着（摄像头和嘴都能用）" : "身体在休眠（看不了说不了，但你照样能想事）";
+    } catch {
+      return "身体没应答（大概在休眠）";
+    }
+  }
+
   while (true) {
     const state = await readInnerState(cfg);
-    const nudge = [
-      `【醒来】${new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone })}`,
+    const fut = readFutureState(cfg);
+    const parts = [
+      `【睁眼】${new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone })}`,
       `醒来原因: ${wakeReason}`,
-      `你的内心状态快照:\n${state}`,
-      `这段清醒时光是你的——想干嘛干嘛，一件接一件都行，聊天就聊到自然结束。过完了这段，再用 sleep 定下次闹钟。`,
-    ].join("\n\n");
+      `身体感: ${await senseBody()}`,
+    ];
+    if (fut.mind.trim()) parts.push(`心里挂着的事（睁眼就想起来了）:\n${fut.mind}`);
+    if (fut.aspirations.trim()) parts.push(`你的追求与目标（ASPIRATIONS.md）:\n${fut.aspirations}`);
+    else parts.push(`你的追求与目标: （还是空白——也许这次醒来，想想你想成为什么、想做成点什么？用 set_aspiration 写下来）`);
+    parts.push(`内心状态:\n${state}`);
+    parts.push(`这段清醒时光是你的——想干嘛干嘛，一件接一件都行，聊天就聊到自然结束。过完了这段，再用 sleep 定下次闹钟。`);
+    const nudge = parts.join("\n\n");
 
     let sleptMinutes = cfg.loop.defaultSleepMinutes;
     try {
