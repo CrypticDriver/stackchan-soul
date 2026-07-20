@@ -13,7 +13,7 @@
     "errorSleepMinutes": 10,
     "nightStartHour": 0,
     "nightEndHour": 7,
-    "nightMaxSleepMinutes": 60
+    "nightMaxSleepMinutes": 15
   },
   "body": {
     "name": "StackChan(狗蛋的身体)",
