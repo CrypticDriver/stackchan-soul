@@ -23,6 +23,8 @@ import { makeBodyTools } from "./tools/body.js";
 import { makeInnerTools, readInnerState } from "./tools/inner.js";
 import { makeWorldTools } from "./tools/world.js";
 import { makeFutureTools, readFutureState } from "./tools/future.js";
+import { makeMcpTools } from "./tools/mcp.js";
+import { makeHandsTools } from "./tools/hands.js";
 import { buildSystemPrompt } from "./prompt.js";
 
 async function main() {
@@ -54,6 +56,8 @@ async function main() {
   const inner = makeInnerTools(cfg);
   const world = makeWorldTools(cfg);
   const future = makeFutureTools(cfg);
+  const mcp = await makeMcpTools(cfg);
+  const hands = makeHandsTools(cfg);
 
   const { session } = await createAgentSession({
     cwd: cfg.soulDir,
@@ -61,8 +65,8 @@ async function main() {
     thinkingLevel: cfg.model.thinking ?? "off",
     modelRuntime,
     // The soul has no filesystem hands — only its body and its inner world.
-    tools: [...body.names, ...inner.names, ...world.names, ...future.names],
-    customTools: [...body.tools, ...inner.tools, ...world.tools, ...future.tools],
+    tools: [...body.names, ...inner.names, ...world.names, ...future.names, ...mcp.names, ...hands.names],
+    customTools: [...body.tools, ...inner.tools, ...world.tools, ...future.tools, ...mcp.tools, ...hands.tools],
     resourceLoader: loader,
     sessionManager,
     settingsManager,

@@ -34,5 +34,17 @@
   },
   "nudge": {
     "port": 9202
+  },
+  "mcp": [
+    {
+      "name": "websearch",
+      "url": "https://<your-gateway>/mcp",
+      "auth": "aws-sigv4",
+      "region": "us-east-1",
+      "service": "bedrock-agentcore"
+    }
+  ],
+  "shell": {
+    "enabled": false
   }
 }

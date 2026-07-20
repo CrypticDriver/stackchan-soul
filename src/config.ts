@@ -62,17 +62,33 @@ export interface SoulConfig {
    *  The human's words join the SAME session — asleep: wakes it; awake:
    *  steers mid-thought. One consciousness, no separate dialog agent. */
   converse?: { port: number };
-  /** Optional web-search sense via an MCP gateway (JSON-RPC tools/call).
-   *  auth: "aws-sigv4" for Bedrock AgentCore gateways (uses default AWS
-   *  credential chain), or omit and set token for Bearer auth. */
+  /** Legacy single-tool web search (superseded by mcp[]; kept for compat). */
   worldSearch?: {
     url: string;
-    toolName: string; // e.g. "web-search-tool___WebSearch"
+    toolName: string;
     auth?: "aws-sigv4" | "bearer";
     region?: string;
     service?: string;
     token?: string;
     maxResults?: number;
+  };
+  /** MCP servers: at startup each is initialized and its tools/list is
+   *  discovered — every tool becomes part of the soul's capabilities.
+   *  auth: "aws-sigv4" (AgentCore gateways) or "bearer"/none. */
+  mcp?: {
+    name: string;
+    url: string;
+    auth?: "aws-sigv4" | "bearer";
+    region?: string;
+    service?: string;
+    token?: string;
+  }[];
+  /** Local shell hands (real capability, real risk — off by default). */
+  shell?: {
+    enabled: boolean;
+    timeoutSeconds?: number;  // default 30
+    maxOutputChars?: number;  // default 4000
+    cwd?: string;             // default soulDir
   };
   log: { streamThoughts: boolean };
 }
