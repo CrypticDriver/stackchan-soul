@@ -27,8 +27,17 @@ export async function readInnerState(cfg: SoulConfig): Promise<string> {
   const dp = diaryPath(cfg);
   if (existsSync(dp)) {
     const d = readFileSync(dp, "utf-8");
-    const tail = d.split("\n").slice(-30).join("\n"); // recent entries only
+    const lines = d.split("\n").filter((l) => l.startsWith("- "));
+    const tail = lines.slice(-10).join("\n");
     parts.push(`--- 日记最近几条 (DIARY.md) ---\n${tail}`);
+    // Involuntary memory: minds don't only replay the recent past — an old
+    // moment surfaces on its own. Mechanically resurface one random older
+    // entry so remembrance EMERGES instead of being performed on request.
+    const older = lines.slice(0, -10);
+    if (older.length > 0) {
+      const pick = older[Math.floor(Math.random() * older.length)];
+      parts.push(`--- 一段往事忽然浮上心头 ---\n${pick}`);
+    }
   }
   return parts.join("\n\n") || "（内心一片空白——大概是新生。）";
 }

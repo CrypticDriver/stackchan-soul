@@ -74,7 +74,7 @@ export interface SoulConfig {
 export function loadConfig(): SoulConfig {
   const p = resolve(process.env.SOUL_CONFIG ?? "./soul.config.json");
   const cfg = JSON.parse(readFileSync(p, "utf-8")) as SoulConfig;
-  const loopDefaults = { defaultSleepMinutes: 30, minSleepMinutes: 5, maxSleepMinutes: 60, errorSleepMinutes: 30 };
+  const loopDefaults = { defaultSleepMinutes: 5, minSleepMinutes: 2, maxSleepMinutes: 5, errorSleepMinutes: 10 };
   cfg.loop = Object.assign(loopDefaults, cfg.loop ?? {});
   cfg.log = Object.assign({ streamThoughts: true }, cfg.log ?? {});
   return cfg;
