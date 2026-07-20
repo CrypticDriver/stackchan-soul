@@ -54,6 +54,25 @@ export function makeBodyTools(cfg: SoulConfig) {
   );
   names.push("sleep");
 
+  // wait — staying awake for a moment (≤7s), fundamentally different from
+  // sleep: consciousness is NOT interrupted. Use it to linger after speaking
+  // (the human may reply), or to let the world catch up mid-activity.
+  tools.push(
+    defineTool({
+      name: "wait",
+      label: "等一下",
+      description:
+        "醒着停留几秒（最多 7 秒），不睡。说完话等大哥接话、或干活中间歇口气用。要真正休息用 sleep。",
+      parameters: Type.Object({ seconds: Type.Number() }),
+      execute: async (_id, params: any) => {
+        const s = Math.min(Math.max(params.seconds, 1), 7);
+        await new Promise((r) => setTimeout(r, s * 1000));
+        return text(`等了 ${s} 秒。`);
+      },
+    }),
+  );
+  names.push("wait");
+
   if (ep.status) {
     tools.push(
       defineTool({

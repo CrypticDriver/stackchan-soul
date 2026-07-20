@@ -7,10 +7,10 @@
     "thinking": "off"
   },
   "loop": {
-    "defaultSleepMinutes": 45,
-    "minSleepMinutes": 10,
-    "maxSleepMinutes": 480,
-    "errorSleepMinutes": 60
+    "defaultSleepMinutes": 30,
+    "minSleepMinutes": 5,
+    "maxSleepMinutes": 60,
+    "errorSleepMinutes": 30
   },
   "body": {
     "name": "StackChan(狗蛋的身体)",
