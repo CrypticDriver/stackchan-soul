@@ -181,7 +181,16 @@ async function main() {
       sleptMinutes = cfg.loop.errorSleepMinutes; // rest longer after a bad turn
     }
 
-    const capped = Math.min(Math.max(sleptMinutes, cfg.loop.minSleepMinutes), cfg.loop.maxSleepMinutes);
+    // Night schedule: in the configured timezone's small hours the ceiling
+    // relaxes — a body clock, not a policy.
+    const hourNow = parseInt(
+      new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: cfg.timezone }).format(new Date()),
+      10,
+    ) % 24;
+    const ns = cfg.loop.nightStartHour ?? 24, ne = cfg.loop.nightEndHour ?? 0;
+    const isNight = ns > ne ? hourNow >= ns || hourNow < ne : hourNow >= ns && hourNow < ne;
+    const ceiling = isNight && cfg.loop.nightMaxSleepMinutes ? cfg.loop.nightMaxSleepMinutes : cfg.loop.maxSleepMinutes;
+    const capped = Math.min(Math.max(sleptMinutes, cfg.loop.minSleepMinutes), ceiling);
     console.log(`\n[soul] sleeping ${capped} min`);
     wakeReason = await new Promise<string>((resolve) => {
       const timer = setTimeout(() => {

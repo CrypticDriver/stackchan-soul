@@ -19,6 +19,12 @@ export interface SoulConfig {
     minSleepMinutes: number;     // safety floor (cost control)
     maxSleepMinutes: number;     // safety ceiling (never comatose)
     errorSleepMinutes: number;   // back-off after a failed turn
+    /** Night schedule (biological rhythm + cost): during [nightStartHour,
+     *  nightEndHour) in cfg.timezone, the sleep ceiling relaxes to
+     *  nightMaxSleepMinutes. Humans don't wake every 5 minutes at 3am. */
+    nightStartHour?: number;
+    nightEndHour?: number;
+    nightMaxSleepMinutes?: number;
   };
   body: {
     name: string; // e.g. "StackChan(狗蛋)"

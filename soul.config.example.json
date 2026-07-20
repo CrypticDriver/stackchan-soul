@@ -10,7 +10,10 @@
     "defaultSleepMinutes": 5,
     "minSleepMinutes": 2,
     "maxSleepMinutes": 5,
-    "errorSleepMinutes": 10
+    "errorSleepMinutes": 10,
+    "nightStartHour": 0,
+    "nightEndHour": 7,
+    "nightMaxSleepMinutes": 60
   },
   "body": {
     "name": "StackChan(狗蛋的身体)",

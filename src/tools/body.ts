@@ -39,7 +39,7 @@ export function makeBodyTools(cfg: SoulConfig) {
       name: "sleep",
       label: "睡觉",
       description:
-        `结束这次醒来，睡到下次。minutes = 想睡多久（分钟，实际范围 ${cfg.loop.minSleepMinutes}-${cfg.loop.maxSleepMinutes}）。好奇/惦记时睡短点，无聊/深夜睡长点。`,
+        `结束这次醒来，睡到下次。minutes = 想睡多久（分钟，白天上限 ${cfg.loop.maxSleepMinutes}，深夜(按你的时区)可以睡到 ${cfg.loop.nightMaxSleepMinutes ?? cfg.loop.maxSleepMinutes} 分钟）。好奇/惦记时睡短点，深夜就睡整觉。`,
       parameters: Type.Object({ minutes: Type.Number() }),
       execute: async (_id, params: any) => {
         const actual = clamp(params.minutes);
