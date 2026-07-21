@@ -4,8 +4,8 @@ StackChan body adapter — bridges stackchan-soul's generic body endpoints
 (status / look / speak) to the goudan stack on the same host:
 
   status → is the device's WS session registered with xiaozhi-server?
-  look   → ask the conversation-agent (which owns the vision chain) to
-           capture + describe, via any OpenAI-compatible dialog-agent endpoint
+  look   → trigger the device to capture + describe via the voice
+           stack's vision endpoint (no external agent involved)
   speak  → goudan_push /goudan/say (existing push channel)
 
 Any other device can replace this file: implement the same three routes
@@ -22,10 +22,11 @@ from aiohttp import web
 PORT = int(os.environ.get("SOUL_ADAPTER_PORT", "9201"))
 PUSH_URL = os.environ.get("PUSH_URL", "http://127.0.0.1:9101/goudan/say")
 BODY_TOKEN = os.environ.get("BODY_TOKEN", "")
-# The conversation agent (same soul, dialog hemisphere) — used for look()
-DIALOG_URL = os.environ.get("DIALOG_URL", "http://127.0.0.1:18789/v1/chat/completions")
-DIALOG_TOKEN = os.environ.get("DIALOG_TOKEN", "")
-DIALOG_MODEL = os.environ.get("DIALOG_MODEL", "")
+# Vision: server-side chat-completions endpoint backed by a multimodal
+# model (Bedrock-direct). look() sends the freshest device frame here.
+VISION_URL = os.environ.get("VISION_URL", "http://127.0.0.1:4000/v1/chat/completions")
+VISION_TOKEN = os.environ.get("VISION_TOKEN", "")
+VISION_MODEL = os.environ.get("VISION_MODEL", "stackchan-vision")
 # Device presence: goudan_push exposes known connections; fall back to push probe
 CONNS_URL = os.environ.get("CONNS_URL", "")
 
@@ -59,15 +60,15 @@ async def look(req: web.Request) -> web.Response:
     # Ask the dialog hemisphere to look: it owns MCP take_photo + vision.
     # Prompt it to *use its camera tool* and return the description only.
     payload = {
-        "model": DIALOG_MODEL,
+        "model": VISION_MODEL,
         "messages": [{
             "role": "user",
-            "content": f"(系统内部请求，不是大哥说话) 用你的拍照工具看一眼现在的画面，然后只回答这个问题：{question}",
+            "content": f"看一眼现在摄像头的画面，简短回答：{question}",
         }],
         "stream": False,
     }
     try:
-        d = _post_json(DIALOG_URL, payload, {"Authorization": f"Bearer {DIALOG_TOKEN}"}, timeout=90)
+        d = _post_json(VISION_URL, payload, {"Authorization": f"Bearer {VISION_TOKEN}"}, timeout=90)
         text = d.get("choices", [{}])[0].get("message", {}).get("content", "")
         return web.json_response({"text": text or "（没看到什么——可能身体不在线）"})
     except Exception as e:
