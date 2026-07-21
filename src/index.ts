@@ -159,10 +159,19 @@ async function main() {
   while (true) {
     const state = await readInnerState(cfg);
     const fut = readFutureState(cfg);
+    // Current sleep ceiling (day/night) — tell the soul, so it doesn't
+    // self-censor to the daytime cap all night.
+    const hourNow0 = parseInt(
+      new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: cfg.timezone }).format(new Date()),
+      10,
+    ) % 24;
+    const ns0 = cfg.loop.nightStartHour ?? 24, ne0 = cfg.loop.nightEndHour ?? 0;
+    const isNight0 = ns0 > ne0 ? hourNow0 >= ns0 || hourNow0 < ne0 : hourNow0 >= ns0 && hourNow0 < ne0;
+    const ceil0 = isNight0 && cfg.loop.nightMaxSleepMinutes ? cfg.loop.nightMaxSleepMinutes : cfg.loop.maxSleepMinutes;
     const parts = [
-      `【睁眼】${new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone })}`,
+      `【睁眼】${new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone })}${isNight0 ? "（深夜）" : ""}`,
       `醒来原因: ${wakeReason}`,
-      `身体感: ${await senseBody()}`,
+      `身体感: ${await senseBody()}（这一觉最多能睡 ${ceil0} 分钟）`,
     ];
     if (fut.mind.trim()) parts.push(`心里挂着的事（睁眼就想起来了）:\n${fut.mind}`);
     if (fut.aspirations.trim()) parts.push(`你的追求与目标（ASPIRATIONS.md）:\n${fut.aspirations}`);
