@@ -46,7 +46,42 @@ export function startConverse(cfg: SoulConfig, session: SessionLike, loop: LoopS
   const port = cfg.converse?.port;
   if (!port) return;
 
+  // Dedup: an unstable device makes xiaozhi POST the SAME utterance several
+  // times in a row, so the soul answers 3-4x and the human hears it repeat.
+  // Coalesce identical utterances:
+  //  - while a turn is in flight → return the SAME promise (no re-trigger)
+  //  - for a short window after → return the cached reply (no re-trigger)
+  const DEDUP_MS = 15_000;
+  let lastUtterance = "";
+  let lastReply = "";
+  let lastAt = 0;
+  let inFlight: { utterance: string; promise: Promise<string> } | null = null;
+
   async function say(utterance: string): Promise<string> {
+    const now = Date.now();
+    if (inFlight && inFlight.utterance === utterance) {
+      console.log(`[converse] 大哥(重复,合并进行中的回答): ${utterance}`);
+      return inFlight.promise;
+    }
+    if (utterance === lastUtterance && now - lastAt < DEDUP_MS) {
+      console.log(`[converse] 大哥(重复,复用上次回答): ${utterance}`);
+      return lastReply;
+    }
+
+    const promise = sayOnce(utterance);
+    inFlight = { utterance, promise };
+    try {
+      const reply = await promise;
+      lastUtterance = utterance;
+      lastReply = reply;
+      lastAt = Date.now();
+      return reply;
+    } finally {
+      if (inFlight && inFlight.utterance === utterance) inFlight = null;
+    }
+  }
+
+  async function sayOnce(utterance: string): Promise<string> {
     const wrapped = `【大哥正在对你说话】"${utterance}"\n（这是实时对话——直接口语回答他，先回话，别的事回完再说。）`;
     console.log(`[converse] 大哥: ${utterance}`);
 
