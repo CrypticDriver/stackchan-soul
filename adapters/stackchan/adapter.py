@@ -5,7 +5,7 @@ StackChan body adapter — bridges stackchan-soul's generic body endpoints
 
   status → is the device's WS session registered with xiaozhi-server?
   look   → trigger the device to capture + describe via the voice
-           stack's vision endpoint (no external agent involved)
+           device camera; the soul sees the raw image itself (multimodal)
   speak  → goudan_push /goudan/say (existing push channel)
 
 Any other device can replace this file: implement the same three routes
@@ -22,11 +22,9 @@ from aiohttp import web
 PORT = int(os.environ.get("SOUL_ADAPTER_PORT", "9201"))
 PUSH_URL = os.environ.get("PUSH_URL", "http://127.0.0.1:9101/goudan/say")
 BODY_TOKEN = os.environ.get("BODY_TOKEN", "")
-# Vision: server-side chat-completions endpoint backed by a multimodal
-# model (Bedrock-direct). look() sends the freshest device frame here.
-VISION_URL = os.environ.get("VISION_URL", "http://127.0.0.1:4000/v1/chat/completions")
-VISION_TOKEN = os.environ.get("VISION_TOKEN", "")
-VISION_MODEL = os.environ.get("VISION_MODEL", "stackchan-vision")
+# Photo: goudan_push hook that triggers the device camera and returns
+# base64 JPEG. The soul sees the raw image itself (it is multimodal).
+PHOTO_URL = os.environ.get("PHOTO_URL", "http://127.0.0.1:9101/goudan/photo")
 # Device presence: goudan_push exposes known connections; fall back to push probe
 CONNS_URL = os.environ.get("CONNS_URL", "")
 
@@ -55,22 +53,19 @@ async def status(_req: web.Request) -> web.Response:
 
 
 async def look(req: web.Request) -> web.Response:
-    body = await req.json()
-    question = body.get("question", "你看到了什么？")
-    # Ask the dialog hemisphere to look: it owns MCP take_photo + vision.
-    # Prompt it to *use its camera tool* and return the description only.
-    payload = {
-        "model": VISION_MODEL,
-        "messages": [{
-            "role": "user",
-            "content": f"看一眼现在摄像头的画面，简短回答：{question}",
-        }],
-        "stream": False,
-    }
+    """Grab the freshest camera frame from the device and hand the RAW image
+    back to the soul. The soul IS a multimodal model — it sees the picture
+    with its own eyes; no external describer. Returns {image, mimeType} or
+    {text} on failure.
+
+    Photo capture goes through goudan_push's /goudan/photo hook, which
+    triggers the device's take_photo MCP tool and returns base64 JPEG.
+    """
     try:
-        d = _post_json(VISION_URL, payload, {"Authorization": f"Bearer {VISION_TOKEN}"}, timeout=90)
-        text = d.get("choices", [{}])[0].get("message", {}).get("content", "")
-        return web.json_response({"text": text or "（没看到什么——可能身体不在线）"})
+        r = _post_json(PHOTO_URL, {}, {"X-Body-Token": BODY_TOKEN}, timeout=30)
+        if r.get("image"):
+            return web.json_response({"image": r["image"], "mimeType": r.get("mimeType", "image/jpeg")})
+        return web.json_response({"text": "（没拍成——身体大概不在线或摄像头没准备好）"})
     except Exception as e:
         return web.json_response({"text": f"（睁眼失败: {e}）"}, status=200)
 

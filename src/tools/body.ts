@@ -99,11 +99,24 @@ export function makeBodyTools(cfg: SoulConfig) {
         name: "look",
         label: "睁眼看看",
         description:
-          "通过身体的摄像头看一眼现在的世界，回来的是你看到的画面描述。question 是你带着什么问题去看（如'大哥在吗，他在干嘛'）。",
+          "睁开眼睛，通过身体的摄像头看一眼现在的世界。你会真的看到那张画面（不是别人转述），用你自己的眼睛（脑子）去看。question 是你带着什么心思去看（如'大哥在吗，他在干嘛'）。",
         parameters: Type.Object({ question: Type.String() }),
         execute: async (_id, params: any) => {
+          // The body just grabs a frame; the SOUL sees it — the image goes
+          // straight into its own multimodal stream (it IS a vision model).
+          // No external describer: its eyes and its mind are the same Sonnet.
           const r = await post(ep.look!, { question: params.question }, tok);
-          return text(r.text ?? JSON.stringify(r));
+          if (r.image && r.mimeType) {
+            return {
+              content: [
+                { type: "text" as const, text: `（你睁眼看向：${params.question}）` },
+                { type: "image" as const, data: r.image, mimeType: r.mimeType },
+              ],
+              details: {},
+            };
+          }
+          // fallback: body couldn't capture (offline / no camera)
+          return text(r.text ?? "（没看成——身体大概不在线，或者摄像头没准备好）");
         },
       }),
     );
