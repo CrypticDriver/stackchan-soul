@@ -48,6 +48,7 @@ export function startConverse(cfg: SoulConfig, session: SessionLike, loop: LoopS
 
   async function say(utterance: string): Promise<string> {
     const wrapped = `【大哥正在对你说话】"${utterance}"\n（这是实时对话——直接口语回答他，先回话，别的事回完再说。）`;
+    console.log(`[converse] 大哥: ${utterance}`);
 
     // Snapshot-diff capture: record the message count BEFORE injecting our
     // words; after the turn settles, the reply = all assistant text among the
@@ -91,7 +92,9 @@ export function startConverse(cfg: SoulConfig, session: SessionLike, loop: LoopS
     if (!roused) {
       await session.steer(wrapped);
     }
-    return settled;
+    const reply = await settled;
+    console.log(`[converse] 狗蛋${roused ? "(醒来)" : "(接话)"}: ${reply || "（没答上来）"}`);
+    return reply;
   }
 
   const server = createServer((req, res) => {
