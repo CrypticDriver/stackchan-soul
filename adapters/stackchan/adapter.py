@@ -62,7 +62,9 @@ async def look(req: web.Request) -> web.Response:
     triggers the device's take_photo MCP tool and returns base64 JPEG.
     """
     try:
-        r = _post_json(PHOTO_URL, {}, {"X-Body-Token": BODY_TOKEN}, timeout=30)
+        body = await req.json() if req.can_read_body else {}
+        question = (body or {}).get("question") or "看看眼前有什么"
+        r = _post_json(PHOTO_URL, {"question": question}, {"X-Body-Token": BODY_TOKEN}, timeout=30)
         if r.get("image"):
             return web.json_response({"image": r["image"], "mimeType": r.get("mimeType", "image/jpeg")})
         return web.json_response({"text": "（没拍成——身体大概不在线或摄像头没准备好）"})
