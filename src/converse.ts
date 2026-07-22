@@ -54,19 +54,27 @@ export function startConverse(cfg: SoulConfig, session: SessionLike, loop: LoopS
     // words; after the turn settles, the reply = all assistant text among the
     // NEW messages. No streaming races, no stale tails.
     const baseCount = session.state.messages.length;
+    // Strip inner monologue: the soul narrates itself in（...）. A message that
+    // is ENTIRELY parenthetical is pure thought (e.g. "（打个盹，5分钟后…）"),
+    // never spoken to the human. Trailing parentheticals inside a real reply
+    // are trimmed too.
+    const spoken = (s: string): string =>
+      s.replace(/（[^（）]*）/gu, " ").replace(/\s+/g, " ").trim();
+    // The reply is the FIRST real spoken assistant message after our words —
+    // NOT the whole turn. The consciousness loop keeps producing text after it
+    // answers ("接下来干点啥呢…", "打个盹吧"); joining all of that made the
+    // voice stack read several utterances as if answering twice.
     const collectNew = (): string => {
-      const out: string[] = [];
       for (const m of session.state.messages.slice(baseCount)) {
         if (m?.role !== "assistant") continue;
         const c = m.content;
-        if (typeof c === "string") out.push(c);
-        else if (Array.isArray(c)) {
-          for (const p of c) if (p?.type === "text" && p.text) out.push(p.text);
-        }
+        let t = "";
+        if (typeof c === "string") t = c;
+        else if (Array.isArray(c)) t = c.filter((p) => p?.type === "text" && p.text).map((p) => p.text).join(" ");
+        const s = spoken(t);
+        if (s) return s; // first message with actual speech wins
       }
-      // Trim a trailing parenthetical inner monologue —（...）at the end is
-      // the soul talking to itself, not to the human.
-      return out.join(" ").trim().replace(/（[^（）]*）\s*$/u, "").trim();
+      return "";
     };
     const settled = new Promise<string>((resolve) => {
       const finish = () => {
