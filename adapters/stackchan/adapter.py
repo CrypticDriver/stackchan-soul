@@ -74,7 +74,10 @@ async def look(req: web.Request) -> web.Response:
 async def speak(req: web.Request) -> web.Response:
     body = await req.json()
     try:
-        _post_json(PUSH_URL, {"text": body.get("text", "")}, {"X-Body-Token": BODY_TOKEN}, timeout=30)
+        # Timeout MUST exceed push's anti-echo hold (30s): if we give up first
+        # the push still speaks after its hold, the soul sees an error and
+        # retries — the human hears the same answer 3-4 times.
+        _post_json(PUSH_URL, {"text": body.get("text", "")}, {"X-Body-Token": BODY_TOKEN}, timeout=55)
         return web.json_response({"ok": True})
     except Exception as e:
         return web.json_response({"ok": False, "error": str(e)}, status=502)
