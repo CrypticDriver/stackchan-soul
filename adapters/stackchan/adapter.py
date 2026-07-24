@@ -25,8 +25,8 @@ BODY_TOKEN = os.environ.get("BODY_TOKEN", "")
 # Photo: goudan_push hook that triggers the device camera and returns
 # base64 JPEG. The soul sees the raw image itself (it is multimodal).
 PHOTO_URL = os.environ.get("PHOTO_URL", "http://127.0.0.1:9101/goudan/photo")
-# Device presence: goudan_push exposes known connections; fall back to push probe
-CONNS_URL = os.environ.get("CONNS_URL", "")
+# Device presence: goudan_push exposes the real WS connection list
+DEVICES_URL = os.environ.get("DEVICES_URL", "http://127.0.0.1:9101/goudan/devices")
 
 
 def _post_json(url: str, payload: dict, headers: dict, timeout: int = 60) -> dict:
@@ -38,15 +38,14 @@ def _post_json(url: str, payload: dict, headers: dict, timeout: int = 60) -> dic
 
 
 async def status(_req: web.Request) -> web.Response:
-    """Online = device WS currently registered (probe push endpoint with empty text → 404 means offline)."""
+    """Online = device WS actually registered in goudan_push's connection list.
+    (Probing /goudan/say status codes lies: a 400 "device not connected" used
+    to read as online. Ask /goudan/devices for the truth instead.)"""
+    online = False
     try:
-        req = urllib.request.Request(PUSH_URL, data=b'{"text":""}',
-                                     headers={"Content-Type": "application/json", "X-Body-Token": BODY_TOKEN})
-        try:
-            urllib.request.urlopen(req, timeout=5)
-            online = True  # empty text is rejected 400 upstream, but connection-known → treat any non-404 as online
-        except urllib.error.HTTPError as e:
-            online = e.code != 404
+        req = urllib.request.Request(DEVICES_URL, headers={"X-Body-Token": BODY_TOKEN})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            online = bool(json.load(r).get("connected"))
     except Exception:
         online = False
     return web.json_response({"online": online})
