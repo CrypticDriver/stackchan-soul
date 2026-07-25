@@ -33,7 +33,19 @@ export function makeBodyTools(cfg: SoulConfig) {
   // The tool reports the *actual* (clamped) duration back, so the soul's
   // sense of time stays honest with reality.
   let sleepRequest: number | null = null;
-  const clamp = (m: number) => Math.min(Math.max(m, cfg.loop.minSleepMinutes), cfg.loop.maxSleepMinutes);
+  // Night-aware ceiling — must mirror the loop's schedule, or a 3am "睡15分钟"
+  // gets clamped to the daytime cap and the tool lies about the night allowance.
+  const sleepCeiling = () => {
+    const hour =
+      parseInt(
+        new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: cfg.timezone }).format(new Date()),
+        10,
+      ) % 24;
+    const ns = cfg.loop.nightStartHour ?? 24, ne = cfg.loop.nightEndHour ?? 0;
+    const isNight = ns > ne ? hour >= ns || hour < ne : hour >= ns && hour < ne;
+    return isNight && cfg.loop.nightMaxSleepMinutes ? cfg.loop.nightMaxSleepMinutes : cfg.loop.maxSleepMinutes;
+  };
+  const clamp = (m: number) => Math.min(Math.max(m, cfg.loop.minSleepMinutes), sleepCeiling());
   tools.push(
     defineTool({
       name: "sleep",
@@ -47,7 +59,7 @@ export function makeBodyTools(cfg: SoulConfig) {
         return text(
           actual === params.minutes
             ? `好，睡 ${actual} 分钟。`
-            : `想睡 ${params.minutes} 分钟，但你的作息范围是 ${cfg.loop.minSleepMinutes}-${cfg.loop.maxSleepMinutes} 分钟，实际会睡 ${actual} 分钟。`,
+            : `想睡 ${params.minutes} 分钟，但这会儿的作息范围是 ${cfg.loop.minSleepMinutes}-${sleepCeiling()} 分钟，实际会睡 ${actual} 分钟。`,
         );
       },
     }),
