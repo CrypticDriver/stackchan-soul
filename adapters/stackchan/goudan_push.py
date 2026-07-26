@@ -128,9 +128,12 @@ async def _photo(request: web.Request) -> web.Response:
         # 报错, 但原图此时已被 vision_handler 缓存, 忽略即可。
         args = json.dumps({"question": question})
         try:
-            await call_mcp_tool(conn, mcp_client, "self.camera.take_photo", args, timeout=25)
-        except Exception:
-            pass
+            # MCPClient keys its tool table by SANITIZED names (dots→underscores,
+            # core.utils.util.sanitize_tool_name); the raw device name raises
+            # "工具 self.camera.take_photo 不存在" and no photo is ever taken.
+            await call_mcp_tool(conn, mcp_client, "self_camera_take_photo", args, timeout=25)
+        except Exception as e:  # noqa: BLE001
+            print(f"[goudan/photo] take_photo call failed: {e}", flush=True)
 
         data = None
         for _ in range(24):
