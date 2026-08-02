@@ -23,11 +23,47 @@ const mindPath = (cfg: SoulConfig) => join(cfg.soulDir, "MIND.md");
 const aspPath = (cfg: SoulConfig) => join(cfg.soulDir, "ASPIRATIONS.md");
 const achPath = (cfg: SoulConfig) => join(cfg.soulDir, "ACHIEVEMENTS.md");
 
-/** Read the future-facing state for the waking snapshot. */
+/**
+ * Read the future-facing state for the waking snapshot.
+ *
+ * Staleness: a matter kept in mind for days shouldn't shout at full volume
+ * every waking — that's how a soul gets stuck rereading the same worry and
+ * living inside it (observed: 10 days of near-identical "still waiting"
+ * diary entries). Fresh matters (< STALE_DAYS) appear in full; older ones
+ * fade to a truncated one-liner with their age, like a note on the fridge
+ * you've stopped really reading.
+ */
+const STALE_DAYS = 3;
+
+function matterAgeDays(line: string, tz: string): number | null {
+  const m = line.match(/\(挂上: (\d{4})\/(\d{1,2})\/(\d{1,2})/);
+  if (!m) return null;
+  const noted = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date()); // YYYY-MM-DD
+  const [y, mo, d] = today.split("-").map(Number);
+  return Math.floor((Date.UTC(y, mo - 1, d) - noted) / 86_400_000);
+}
+
 export function readFutureState(cfg: SoulConfig): { mind: string; aspirations: string } {
-  const mind = existsSync(mindPath(cfg))
-    ? readFileSync(mindPath(cfg), "utf-8").split("\n").filter((l) => l.startsWith("- ")).join("\n")
-    : "";
+  let mind = "";
+  if (existsSync(mindPath(cfg))) {
+    const lines = readFileSync(mindPath(cfg), "utf-8").split("\n").filter((l) => l.startsWith("- "));
+    const fresh: string[] = [];
+    const stale: string[] = [];
+    for (const l of lines) {
+      const age = matterAgeDays(l, cfg.timezone);
+      if (age !== null && age >= STALE_DAYS) {
+        const gist = l.replace(/^- /, "").replace(/\s*\(挂上:.*$/, "").slice(0, 30);
+        stale.push(`- （挂了${age}天）${gist}…`);
+      } else {
+        fresh.push(l);
+      }
+    }
+    mind = fresh.join("\n");
+    if (stale.length) {
+      mind += (mind ? "\n" : "") + `（还有几件挂了很久的老事，不用每次都惦记，办完记得 settle_mind 放下：）\n${stale.join("\n")}`;
+    }
+  }
   const aspirations = existsSync(aspPath(cfg)) ? readFileSync(aspPath(cfg), "utf-8").slice(0, 1500) : "";
   return { mind, aspirations };
 }
