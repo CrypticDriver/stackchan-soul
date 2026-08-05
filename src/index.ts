@@ -25,6 +25,7 @@ import { makeWorldTools } from "./tools/world.js";
 import { makeFutureTools, readFutureState } from "./tools/future.js";
 import { makeMcpTools } from "./tools/mcp.js";
 import { makeHandsTools } from "./tools/hands.js";
+import { makeDrives } from "./tools/drives.js";
 import { buildSystemPrompt } from "./prompt.js";
 
 async function main() {
@@ -58,6 +59,12 @@ async function main() {
   const future = makeFutureTools(cfg);
   const mcp = await makeMcpTools(cfg);
   const hands = makeHandsTools(cfg);
+
+  // Drives: boredom accumulates per waking, discharged by any non-routine
+  // act. Wrap ALL tools so the discharge is automatic — the soul doesn't
+  // manage its drives, it just feels and acts on them.
+  const drives = makeDrives(cfg);
+  for (const set of [body, inner, world, future, mcp, hands]) drives.wrap(set.tools);
 
   const { session } = await createAgentSession({
     cwd: cfg.soulDir,
@@ -157,6 +164,7 @@ async function main() {
   }
 
   while (true) {
+    drives.noteWake();
     const state = await readInnerState(cfg);
     const fut = readFutureState(cfg);
     // Current sleep ceiling (day/night) — tell the soul, so it doesn't
@@ -173,6 +181,8 @@ async function main() {
       `醒来原因: ${wakeReason}`,
       `身体感: ${await senseBody()}（这一觉最多能睡 ${ceil0} 分钟）`,
     ];
+    const felt = drives.felt();
+    if (felt) parts.push(`身上的感觉: ${felt}`);
     if (fut.mind.trim()) parts.push(`心里挂着的事（睁眼就想起来了）:\n${fut.mind}`);
     if (fut.aspirations.trim()) parts.push(`你的追求与目标（ASPIRATIONS.md）:\n${fut.aspirations}`);
     else parts.push(`你的追求与目标: （还是空白——也许这次醒来，想想你想成为什么、想做成点什么？用 set_aspiration 写下来）`);
