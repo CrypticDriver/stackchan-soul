@@ -99,8 +99,9 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
       name: "weixin_send",
       label: "发微信",
       description:
-        "给大哥发一条微信消息（异步的，他不一定马上看）。想主动说点什么、或回应他刚发来的微信时用。" +
-        "text 是消息内容。宁可攒够一件值得说的事再发，别刷屏——微信是你的信纸，不是闹钟。",
+        "给大哥发一条微信消息（异步的，他不一定马上看）。想他了、有意思的事想分享、" +
+        "心里的话攒够了、或回应他刚发来的微信——都可以主动发，别等他先开口。" +
+        "text 是消息内容。有分寸就好（一次说清一件事，别连环轰炸），但该说就说。",
       parameters: Type.Object({ text: Type.String() }),
       execute: async (_id, p: any) => {
         if (!lastFrom) return text("还不知道该发给谁——等大哥先在微信上说句话，我就记住他了。");
