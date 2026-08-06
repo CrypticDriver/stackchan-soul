@@ -7,7 +7,9 @@
   "scripts": {
     "start": "npx tsx src/index.ts",
     "build": "tsc",
-    "dev": "npx tsx watch src/index.ts"
+    "dev": "npx tsx watch src/index.ts",
+    "test": "node --import tsx --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "embodied-ai",
