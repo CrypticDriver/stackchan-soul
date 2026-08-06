@@ -83,6 +83,16 @@ export interface SoulConfig {
     service?: string;
     token?: string;
   }[];
+  /** Metabolic budget: the day's food. When maxWakesPerDay is exhausted the
+   *  soul gets hungry — sleeps stretch to hungrySleepMinutes until the day
+   *  (in cfg.timezone) rolls over. The hard cost ceiling, lived as hunger. */
+  budget?: {
+    maxWakesPerDay: number;
+    hungrySleepMinutes?: number; // default 60
+  };
+  /** GET /health on 127.0.0.1:<port> — the guardian's view (wakes, drives,
+   *  diary rhythm, rut detector). Read-only observation, never control. */
+  health?: { port: number };
   /** Local shell hands (real capability, real risk — off by default). */
   shell?: {
     enabled: boolean;

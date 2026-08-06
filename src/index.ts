@@ -26,6 +26,7 @@ import { makeFutureTools, readFutureState } from "./tools/future.js";
 import { makeMcpTools } from "./tools/mcp.js";
 import { makeHandsTools } from "./tools/hands.js";
 import { makeDrives } from "./tools/drives.js";
+import { makeVitals } from "./vitals.js";
 import { buildSystemPrompt } from "./prompt.js";
 
 async function main() {
@@ -65,6 +66,22 @@ async function main() {
   // manage its drives, it just feels and acts on them.
   const drives = makeDrives(cfg);
   for (const set of [body, inner, world, future, mcp, hands]) drives.wrap(set.tools);
+
+  // Vitals: budget-as-hunger + GET /health for the guardian.
+  const vitals = makeVitals(cfg);
+  if (cfg.health?.port) {
+    const { createServer: createHealthServer } = await import("http");
+    createHealthServer((req, res) => {
+      if (req.method === "GET" && req.url === "/health") {
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(vitals.health({ boredom: () => drives.level() })));
+      } else {
+        res.statusCode = 404;
+        res.end();
+      }
+    }).listen(cfg.health.port, "127.0.0.1");
+    console.log(`[soul] health endpoint on 127.0.0.1:${cfg.health.port}/health`);
+  }
 
   const { session } = await createAgentSession({
     cwd: cfg.soulDir,
@@ -165,6 +182,7 @@ async function main() {
 
   while (true) {
     drives.noteWake();
+    vitals.noteWake();
     const state = await readInnerState(cfg);
     const fut = readFutureState(cfg);
     // Current sleep ceiling (day/night) — tell the soul, so it doesn't
@@ -181,7 +199,7 @@ async function main() {
       `醒来原因: ${wakeReason}`,
       `身体感: ${await senseBody()}（这一觉最多能睡 ${ceil0} 分钟）`,
     ];
-    const felt = drives.felt();
+    const felt = [drives.felt(), vitals.felt()].filter(Boolean).join("\n");
     if (felt) parts.push(`身上的感觉: ${felt}`);
     if (fut.mind.trim()) parts.push(`心里挂着的事（睁眼就想起来了）:\n${fut.mind}`);
     if (fut.aspirations.trim()) parts.push(`你的追求与目标（ASPIRATIONS.md）:\n${fut.aspirations}`);
@@ -213,7 +231,12 @@ async function main() {
     const ns = cfg.loop.nightStartHour ?? 24, ne = cfg.loop.nightEndHour ?? 0;
     const isNight = ns > ne ? hourNow >= ns || hourNow < ne : hourNow >= ns && hourNow < ne;
     const ceiling = isNight && cfg.loop.nightMaxSleepMinutes ? cfg.loop.nightMaxSleepMinutes : cfg.loop.maxSleepMinutes;
-    const capped = Math.min(Math.max(sleptMinutes, cfg.loop.minSleepMinutes), ceiling);
+    let capped = Math.min(Math.max(sleptMinutes, cfg.loop.minSleepMinutes), ceiling);
+    // Starving: the day's wake budget is spent — stretch sleep regardless of
+    // what the soul asked for. It was told in the snapshot; this is the body
+    // enforcing what the mind already felt. Nudges still work (real events
+    // can wake a fasting animal).
+    if (vitals.starving()) capped = Math.max(capped, cfg.budget?.hungrySleepMinutes ?? 60);
     console.log(`\n[soul] sleeping ${capped} min`);
     wakeReason = await new Promise<string>((resolve) => {
       const timer = setTimeout(() => {

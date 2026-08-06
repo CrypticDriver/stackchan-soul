@@ -61,6 +61,11 @@ export function makeDrives(cfg: SoulConfig) {
       return tools;
     },
 
+    /** Current boredom level (for /health observation). */
+    level(): number {
+      return state.boredom;
+    },
+
     /** The felt sensation for the waking snapshot ("" when content). */
     felt(): string {
       const b = state.boredom;
