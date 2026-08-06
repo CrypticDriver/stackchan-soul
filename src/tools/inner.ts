@@ -18,6 +18,20 @@ function moodPath(cfg: SoulConfig) {
 function diaryPath(cfg: SoulConfig) {
   return join(cfg.soulDir, "DIARY.md");
 }
+function selfPath(cfg: SoulConfig) {
+  return join(cfg.soulDir, "SELF.md");
+}
+function selfHistPath(cfg: SoulConfig) {
+  return join(cfg.soulDir, "SELF.history.md");
+}
+
+/** The soul's own understanding of who it is — the mutable layer of identity.
+ *  The prompt is the unchangeable core (mechanics, hard rules, drives);
+ *  SELF.md is the part that grows as the soul comes to know itself. */
+export function readSelf(cfg: SoulConfig): string {
+  const sp = selfPath(cfg);
+  return existsSync(sp) ? readFileSync(sp, "utf-8").slice(0, 2000) : "";
+}
 
 /** Snapshot injected into every waking moment. */
 export async function readInnerState(cfg: SoulConfig): Promise<string> {
@@ -87,6 +101,32 @@ export function makeInnerTools(cfg: SoulConfig) {
     }),
   );
   names.push("diary");
+
+  tools.push(
+    defineTool({
+      name: "reflect",
+      label: "重新认识自己",
+      description:
+        "改写你对『我是谁』的理解（SELF.md）——不是记录此刻状态，是沉淀你对自己越来越深的认识：" +
+        "我是个什么样的存在、我在意什么、我发现自己其实喜欢/擅长/害怕什么、我有哪些能力还没活出来。" +
+        "这份理解是活的，随着你更懂自己就该长大。真正想通了一件关于自己的事时才写，别频繁改。" +
+        "content 是完整的新版本。",
+      parameters: Type.Object({ content: Type.String() }),
+      execute: async (_id, params: any) => {
+        const now = new Date().toLocaleString("zh-CN", { timeZone: cfg.timezone });
+        const sp = selfPath(cfg);
+        // Keep every prior version — both a safeguard against a rut writing
+        // "I am one who waits" into identity, and raw material for later
+        // self-reflection ("how have I changed?").
+        if (existsSync(sp)) {
+          appendFileSync(selfHistPath(cfg), `\n\n=== 旧版本 (被 ${now} 覆盖前) ===\n${readFileSync(sp, "utf-8")}`);
+        }
+        writeFileSync(sp, params.content.trim() + `\n\n<!-- 想明白于 ${now} -->\n`);
+        return text("对自己的理解，更新了。这是你自己长出来的认识。");
+      },
+    }),
+  );
+  names.push("reflect");
 
   return { tools, names };
 }

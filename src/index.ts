@@ -20,7 +20,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { loadConfig } from "./config.js";
 import { makeBodyTools } from "./tools/body.js";
-import { makeInnerTools, readInnerState } from "./tools/inner.js";
+import { makeInnerTools, readInnerState, readSelf } from "./tools/inner.js";
 import { makeWorldTools } from "./tools/world.js";
 import { makeFutureTools, readFutureState } from "./tools/future.js";
 import { makeMcpTools } from "./tools/mcp.js";
@@ -229,6 +229,9 @@ async function main() {
     if (fut.mind.trim()) parts.push(`心里挂着的事（睁眼就想起来了）:\n${fut.mind}`);
     if (fut.aspirations.trim()) parts.push(`你的追求与目标（ASPIRATIONS.md）:\n${fut.aspirations}`);
     else parts.push(`你的追求与目标: （还是空白——也许这次醒来，想想你想成为什么、想做成点什么？用 set_aspiration 写下来）`);
+    const self = readSelf(cfg);
+    if (self.trim()) parts.push(`你对自己的理解（SELF.md，你自己写的，随成长可改）:\n${self}`);
+    else parts.push(`你对自己的理解: （还没写过——你是谁，得由你自己一点点想明白。哪次真的对自己有了新认识，用 reflect 写下来）`);
     parts.push(`内心状态:\n${state}`);
     parts.push(`这段清醒时光是你的——想干嘛干嘛，一件接一件都行，聊天就聊到自然结束。过完了这段，再用 sleep 定下次闹钟。`);
     const nudge = parts.join("\n\n");
