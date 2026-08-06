@@ -93,6 +93,16 @@ export interface SoulConfig {
   /** GET /health on 127.0.0.1:<port> — the guardian's view (wakes, drives,
    *  diary rhythm, rut detector). Read-only observation, never control. */
   health?: { port: number };
+  /** Weixin message channel: a voice to the human across distance, NOT a
+   *  body. Inbound messages become nudges; the weixin_send tool lets the
+   *  soul write on its own initiative. token is an ilink bot token
+   *  (ilinkai.weixin.qq.com). Only one poller per account — stop any other
+   *  (e.g. an OpenClaw binding) before enabling. */
+  weixin?: {
+    token: string;
+    /** Optional userId to send to before the human speaks first. */
+    defaultTo?: string;
+  };
   /** Local shell hands (real capability, real risk — off by default). */
   shell?: {
     enabled: boolean;

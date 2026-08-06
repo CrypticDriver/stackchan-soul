@@ -27,6 +27,7 @@ import { makeMcpTools } from "./tools/mcp.js";
 import { makeHandsTools } from "./tools/hands.js";
 import { makeDrives } from "./tools/drives.js";
 import { makeVitals } from "./vitals.js";
+import { makeWeixin } from "./tools/weixin.js";
 import { buildSystemPrompt } from "./prompt.js";
 
 async function main() {
@@ -83,14 +84,26 @@ async function main() {
     console.log(`[soul] health endpoint on 127.0.0.1:${cfg.health.port}/health`);
   }
 
+  // A stable rouse handle: the loop reassigns `rouse` each sleep, so channels
+  // that live across wakings (weixin poll) call through this indirection.
+  let rouse: ((reason: string) => void) | null = null;
+  const rouseNow = (reason: string) => {
+    if (rouse) rouse(reason);
+  };
+
+  // Weixin: a voice to the human across distance (inbound → nudge,
+  // weixin_send → outbound). Drives should treat weixin_send as novel.
+  const weixin = makeWeixin(cfg, rouseNow);
+  drives.wrap(weixin.tools);
+
   const { session } = await createAgentSession({
     cwd: cfg.soulDir,
     model,
     thinkingLevel: cfg.model.thinking ?? "off",
     modelRuntime,
     // The soul has no filesystem hands — only its body and its inner world.
-    tools: [...body.names, ...inner.names, ...world.names, ...future.names, ...mcp.names, ...hands.names],
-    customTools: [...body.tools, ...inner.tools, ...world.tools, ...future.tools, ...mcp.tools, ...hands.tools],
+    tools: [...body.names, ...inner.names, ...world.names, ...future.names, ...mcp.names, ...hands.names, ...weixin.names],
+    customTools: [...body.tools, ...inner.tools, ...world.tools, ...future.tools, ...mcp.tools, ...hands.tools, ...weixin.tools],
     resourceLoader: loader,
     sessionManager,
     settingsManager,
@@ -108,7 +121,6 @@ async function main() {
   // Life isn't only alarm clocks: events (someone appeared, a message
   // arrived) can rouse the soul early. Anything on this host can
   // POST {reason} to /nudge — body adapters, sensor bridges, cron, humans.
-  let rouse: ((reason: string) => void) | null = null;
   if (cfg.nudge?.port) {
     const { createServer } = await import("http");
     const nudgeServer = createServer((req, res) => {
@@ -160,6 +172,9 @@ async function main() {
       },
     });
   }
+
+  // Weixin channel: start polling for the human's messages (each → nudge).
+  weixin.start();
 
   // Passive body sense: probed automatically each waking — senses come
   // before thought, the soul shouldn't have to *decide* to feel its body.
