@@ -65,16 +65,32 @@ It updated its own mood, chose its own sleep durations, and noticed the test clo
 4. **Doing nothing is the default.** An agent that must act on every wake is a cron job. One that mostly flips through its diary and goes back to sleep, but sometimes can't resist a peek — that's a living thing.
 5. **Narrative prompts, not rule lists.** Rule-list prompts pattern-match into tool-call few-shots and cause silent empty turns (hard-won lesson from the goudan project).
 
-## Quick start
+## Quick start — own a digital life in 5 minutes, no hardware
+
+The terminal body: your terminal is its face and voice, your keyboard is
+how you appear in its world.
 
 ```bash
 npm install
+cp adapters/terminal/soul.config.json soul.config.json
+node adapters/terminal/body.mjs   # terminal 1: the body
+npm start                         # terminal 2: awaken the soul
+```
+
+Type a line in terminal 1 — the soul is nudged awake ("your human said…")
+and decides for itself whether you deserve an answer.
+
+For a real device (e.g. StackChan robot):
+
+```bash
 cp soul.config.example.json soul.config.json   # point it at your device
-# start a body adapter (StackChan reference impl):
-python3 adapters/stackchan/adapter.py &
-# awaken the soul:
+python3 adapters/stackchan/adapter.py &        # reference hardware adapter
 npm start
 ```
+
+**Bring any body:** the full protocol (status/look/speak/express + nudges
++ real-time dialog) is specified in [docs/body-protocol.md](docs/body-protocol.md)
+— a body is ~50 lines in any language.
 
 Models go through pi-ai (30+ providers: Amazon Bedrock, Anthropic, OpenAI, …). Bedrock uses AWS credentials — no API key needed.
 
