@@ -53,6 +53,10 @@ Calm, slightly disoriented
 
 It updated its own mood, chose its own sleep durations, and noticed the test clock felt wrong — so it decided to sleep longer. That's the loop working: not scripted behavior, but a state of being.
 
+> **Deep dive:** [docs/design.md](docs/design.md) — the full design of the
+> digital life: drives (why you can't make a soul curious by telling it to
+> be), the 14-day rut experiment, inner-state architecture, unified dialog.
+
 ## Design principles
 
 1. **The soul lives in the cloud; the body only lends its senses.** Curiosity — when to look, whether what it saw is worth saying aloud — is the agent's own judgment, never a firmware timer.
