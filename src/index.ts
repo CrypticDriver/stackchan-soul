@@ -87,8 +87,12 @@ async function main() {
   // A stable rouse handle: the loop reassigns `rouse` each sleep, so channels
   // that live across wakings (weixin poll) call through this indirection.
   let rouse: ((reason: string) => void) | null = null;
+  // A message that arrives mid-thought (rouse === null) must NOT be lost —
+  // stash it and let the next waking pick it up.
+  let pendingReason: string | null = null;
   const rouseNow = (reason: string) => {
     if (rouse) rouse(reason);
+    else pendingReason = pendingReason ? `${pendingReason}\n${reason}` : reason;
   };
 
   // Weixin: a voice to the human across distance (inbound → nudge,
@@ -198,6 +202,12 @@ async function main() {
   while (true) {
     drives.noteWake();
     vitals.noteWake();
+    // A message that arrived while the soul was thinking becomes the reason
+    // for this waking (prepended, so a real alarm reason still shows too).
+    if (pendingReason) {
+      wakeReason = `${pendingReason}${wakeReason ? `\n（另外：${wakeReason}）` : ""}`;
+      pendingReason = null;
+    }
     const state = await readInnerState(cfg);
     const fut = readFutureState(cfg);
     // Current sleep ceiling (day/night) — tell the soul, so it doesn't

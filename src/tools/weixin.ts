@@ -144,6 +144,10 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
             updatesBuf = resp.get_updates_buf;
             saveBuf();
           }
+          const n = resp?.msgs?.length ?? 0;
+          if (resp?.errcode || n) {
+            console.log(`[soul] weixin getUpdates: msgs=${n} errcode=${resp?.errcode ?? 0} ${resp?.errmsg ?? ""}`);
+          }
           for (const msg of resp?.msgs ?? []) {
             const from = msg?.from_user_id;
             if (!from) continue; // bot's own / system message
@@ -156,6 +160,7 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
             if (!body) continue;
             lastFrom = from;
             if (msg?.context_token) lastContext = msg.context_token;
+            console.log(`[soul] weixin ← 大哥: ${body.slice(0, 40)}`);
             rouse(`大哥在微信上对你说："${body}"（想回应就用 weixin_send）`);
           }
         } catch (e: any) {
