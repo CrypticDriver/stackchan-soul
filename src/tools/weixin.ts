@@ -123,6 +123,7 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
           wx.token!,
           SEND_TIMEOUT_MS,
         );
+        console.log(`[soul] weixin → 大哥: ${p.text.slice(0, 40)}`);
         return text("微信发出去了。");
       },
     }),
