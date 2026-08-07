@@ -75,7 +75,7 @@ export function makeVitals(cfg: SoulConfig) {
     },
 
     /** Guardian's view. diaryPath/drives are read fresh per request. */
-    health(extra: { boredom: () => number }) {
+    health(extra: { boredom: () => number; silenceHours?: () => number }) {
       rollover();
       const diaryPath = join(cfg.soulDir, "DIARY.md");
       let diaryToday = 0;
@@ -97,6 +97,7 @@ export function makeVitals(cfg: SoulConfig) {
         wakesToday: state.wakes,
         budget: max ? { maxWakesPerDay: max, used: +this.used().toFixed(2), starving: this.starving() } : null,
         boredom: extra.boredom(),
+        silenceHours: extra.silenceHours ? +extra.silenceHours().toFixed(1) : null,
         diaryToday,
         diaryVarietyLast10: variety10, // ≤2 = rut (复读机), 14-day collapse showed 1
         mood,

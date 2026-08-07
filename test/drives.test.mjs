@@ -39,6 +39,29 @@ test("boredom persists across restarts", () => {
   assert.equal(JSON.parse(readFileSync(join(dir, "DRIVES.json"), "utf-8")).boredom, 15);
 });
 
+test("missing accumulates with silence and is settled by contact either way", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "drives-"));
+  const d = makeDrives({ soulDir: dir });
+  assert.equal(d.felt(), "", "no missing right after boot");
+  // Backdate last contact 20h — the itch tier.
+  const state = JSON.parse(readFileSync(join(dir, "DRIVES.json"), "utf-8"));
+  state.lastContactMs = Date.now() - 20 * 3_600_000;
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(join(dir, "DRIVES.json"), JSON.stringify(state));
+  const e = makeDrives({ soulDir: dir });
+  assert.match(e.felt(), /想他/, "18h+ silence is felt");
+  // Outbound contact settles it.
+  const [send] = e.wrap([{ name: "weixin_send", execute: async () => "ok" }]);
+  await send.execute("id", {});
+  assert.doesNotMatch(e.felt(), /想他/, "reaching out settles the missing");
+  assert.ok(e.silenceHours() < 1);
+  // Inbound contact settles it too.
+  writeFileSync(join(dir, "DRIVES.json"), JSON.stringify(state));
+  const f = makeDrives({ soulDir: dir });
+  f.noteContact();
+  assert.doesNotMatch(f.felt(), /想他/, "hearing from him settles the missing");
+});
+
 test("wrap preserves the wrapped tool's return value", async () => {
   const d = fresh();
   const [t] = d.wrap([{ name: "look", execute: async (_id, p) => ({ echo: p.q }) }]);

@@ -75,7 +75,7 @@ async function main() {
     createHealthServer((req, res) => {
       if (req.method === "GET" && req.url === "/health") {
         res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(vitals.health({ boredom: () => drives.level() })));
+        res.end(JSON.stringify(vitals.health({ boredom: () => drives.level(), silenceHours: () => drives.silenceHours() })));
       } else {
         res.statusCode = 404;
         res.end();
@@ -96,8 +96,12 @@ async function main() {
   };
 
   // Weixin: a voice to the human across distance (inbound → nudge,
-  // weixin_send → outbound). Drives should treat weixin_send as novel.
-  const weixin = makeWeixin(cfg, rouseNow);
+  // weixin_send → outbound). Drives should treat weixin_send as novel,
+  // and hearing from the human settles the missing-drive.
+  const weixin = makeWeixin(cfg, (reason) => {
+    drives.noteContact();
+    rouseNow(reason);
+  });
   drives.wrap(weixin.tools);
 
   const { session } = await createAgentSession({
@@ -168,6 +172,7 @@ async function main() {
     startConverse(cfg, session as any, {
       isThinking: () => thinking,
       rouse: (reason: string) => {
+        drives.noteContact(); // his voice reaching us settles the missing
         if (rouse) {
           rouse(reason);
           return true;
