@@ -77,19 +77,28 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
 
   const statePath = join(cfg.soulDir, "weixin-sync.json");
   let updatesBuf = "";
+  // Last human we heard from — weixin_send replies here by default, and the
+  // context_token threads the conversation server-side. Both persist across
+  // restarts: without a context_token the server rejects proactive sends
+  // ("prepare failed"), so losing it to a restart silently muted the soul.
+  let lastFrom: string | null = wx.defaultTo ?? null;
+  let lastContext: string | undefined;
   try {
-    if (existsSync(statePath)) updatesBuf = JSON.parse(readFileSync(statePath, "utf-8")).get_updates_buf ?? "";
+    if (existsSync(statePath)) {
+      const st = JSON.parse(readFileSync(statePath, "utf-8"));
+      updatesBuf = st.get_updates_buf ?? "";
+      if (st.last_from) lastFrom = st.last_from;
+      if (st.last_context) lastContext = st.last_context;
+    }
   } catch {}
   const saveBuf = () => {
     try {
-      writeFileSync(statePath, JSON.stringify({ get_updates_buf: updatesBuf }));
+      writeFileSync(
+        statePath,
+        JSON.stringify({ get_updates_buf: updatesBuf, last_from: lastFrom, last_context: lastContext }),
+      );
     } catch {}
   };
-
-  // Last human we heard from — weixin_send replies here by default, and the
-  // context_token threads the conversation server-side.
-  let lastFrom: string | null = wx.defaultTo ?? null;
-  let lastContext: string | undefined;
   const seen = new Set<string>(); // message_id dedup (device/network can redeliver)
   const startMs = Date.now();
 
@@ -106,7 +115,7 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
       execute: async (_id, p: any) => {
         if (!lastFrom) return text("还不知道该发给谁——等大哥先在微信上说句话，我就记住他了。");
         const clientId = `stackchan-soul:${Date.now()}-${randomBytes(4).toString("hex")}`;
-        await api(
+        const resp = await api(
           "ilink/bot/sendmessage",
           {
             msg: {
@@ -123,6 +132,17 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
           wx.token!,
           SEND_TIMEOUT_MS,
         );
+        // The API answers HTTP 200 even when it refuses the message (e.g.
+        // ret:-2 "prepare failed" when the conversation context expired) —
+        // an unchecked response reads as success and silently mutes the soul.
+        const ret = resp?.ret ?? resp?.errcode ?? 0;
+        if (ret !== 0) {
+          console.error(`[soul] weixin send REJECTED (ret=${ret} ${resp?.errmsg ?? ""}): ${p.text.slice(0, 40)}`);
+          return text(
+            `微信没发出去（服务端拒绝: ${resp?.errmsg ?? ret}）。这条话大哥收不到——` +
+              `别忘了这件事，可以把想说的挂在心上（keep_in_mind），等他下次来消息时对话就通了，那时再说。`,
+          );
+        }
         console.log(`[soul] weixin → 大哥: ${p.text.slice(0, 40)}`);
         return text("微信发出去了。");
       },
@@ -162,6 +182,7 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
             if (!body) continue;
             lastFrom = from;
             if (msg?.context_token) lastContext = msg.context_token;
+            saveBuf(); // persist the reply route — it's what makes proactive sends deliverable
             console.log(`[soul] weixin ← 大哥: ${body.slice(0, 40)}`);
             rouse(`大哥在微信上对你说："${body}"（想回应就用 weixin_send）`);
           }
