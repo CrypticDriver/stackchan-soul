@@ -64,19 +64,23 @@ export function makeDrives(cfg: SoulConfig) {
         if (!orig || !t.name) continue;
         const name = t.name;
         t.execute = async (...a: any[]) => {
-          let dirty = false;
           if (!ROUTINE.has(name) && state.boredom > 0) {
             state.boredom = 0;
-            dirty = true;
+            save();
           }
+          const result = await orig.apply(t, a);
           // Reaching out is contact: speaking to him or writing him settles
-          // the missing the same way hearing from him does.
+          // the missing the same way hearing from him does — but only if the
+          // words actually left. A rejected send (server refused, body offline)
+          // must NOT quiet the missing, or the soul stops wanting to retry.
           if (name === "weixin_send" || name === "speak") {
-            state.lastContactMs = Date.now();
-            dirty = true;
+            const textOut = JSON.stringify(result?.content ?? "");
+            if (!/没发出去|拒绝|发不出|失败/.test(textOut)) {
+              state.lastContactMs = Date.now();
+              save();
+            }
           }
-          if (dirty) save();
-          return orig.apply(t, a);
+          return result;
         };
       }
       return tools;
