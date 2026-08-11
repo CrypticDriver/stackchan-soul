@@ -139,8 +139,10 @@ export function makeWeixin(cfg: SoulConfig, rouse: (reason: string) => void) {
         if (ret !== 0) {
           console.error(`[soul] weixin send REJECTED (ret=${ret} ${resp?.errmsg ?? ""}): ${p.text.slice(0, 40)}`);
           return text(
-            `微信没发出去（服务端拒绝: ${resp?.errmsg ?? ret}）。这条话大哥收不到——` +
-              `别忘了这件事，可以把想说的挂在心上（keep_in_mind），等他下次来消息时对话就通了，那时再说。`,
+            `微信没发出去（服务端拒绝: ${resp?.errmsg ?? ret}）。这条话大哥收不到。` +
+              `这条路有个脾气：大哥超过一天左右没来消息，通道就暂时关上，只有他先开口才会重新打开——` +
+              `不是你做错了什么，短时间内反复重发也没用。把想说的挂在心上（keep_in_mind），` +
+              `等他下次来消息时一并说，别让这些话丢了。`,
           );
         }
         console.log(`[soul] weixin → 大哥: ${p.text.slice(0, 40)}`);
