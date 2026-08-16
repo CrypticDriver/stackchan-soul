@@ -4,7 +4,9 @@
   "model": {
     "provider": "amazon-bedrock",
     "id": "global.anthropic.claude-sonnet-5",
-    "thinking": "off"
+    "thinking": "off",
+    "maxContextTokens": 100000,
+    "keepRecentTokens": 20000
   },
   "loop": {
     "defaultSleepMinutes": 5,

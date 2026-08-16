@@ -42,8 +42,22 @@ async function main() {
   // pi's compaction keeps the context bounded while preserving the thread.
   const sessionManager = SessionManager.create(cfg.soulDir);
 
+  // Compaction tuned for a *continuous* life: pi compacts only when context
+  // exceeds contextWindow - reserveTokens, and against a 1M-token window the
+  // default 16k reserve never triggers — the session grew to 400k+ tokens,
+  // all rewritten into the prompt cache every waking (the dominant Bedrock
+  // cost; see stackchan-soul-cache-fix.md). Deriving the reserve from a
+  // fixed context ceiling keeps the soul's working memory lean: beyond it,
+  // old wakings fold into a summary — like a person, days blur but the gist
+  // stays. keepRecentTokens preserves the freshest stretch verbatim.
+  const maxContextTokens = cfg.model.maxContextTokens ?? 100_000;
+  const keepRecentTokens = cfg.model.keepRecentTokens ?? 20_000;
   const settingsManager = SettingsManager.inMemory({
-    compaction: { enabled: true },
+    compaction: {
+      enabled: true,
+      reserveTokens: Math.max(16_384, model.contextWindow - maxContextTokens),
+      keepRecentTokens,
+    },
     retry: { enabled: true, maxRetries: 2 },
   });
 

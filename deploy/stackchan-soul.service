@@ -6,6 +6,11 @@ After=network-online.target
 User=ubuntu
 WorkingDirectory=/home/ubuntu/stackchan-soul
 Environment=SOUL_CONFIG=/home/ubuntu/stackchan-soul/soul.config.json
+# 1h prompt-cache TTL. The soul wakes every 2-5 minutes; pi-ai's default 5m
+# TTL expires right between wakings, so every waking rewrote the whole
+# context into cache (~$250/day observed). With 1h retention the wakings
+# within each hour become cache reads. See docs/cost.md.
+Environment=PI_CACHE_RETENTION=long
 ExecStart=/usr/bin/env npx tsx src/index.ts
 Restart=always
 RestartSec=30

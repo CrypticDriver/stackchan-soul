@@ -13,6 +13,16 @@ export interface SoulConfig {
     provider: string; // e.g. "amazon-bedrock"
     id: string;       // e.g. "global.anthropic.claude-sonnet-5"
     thinking?: "off" | "low" | "medium" | "high";
+    /** Context ceiling in tokens (default 100_000). pi only compacts when
+     *  context exceeds contextWindow - reserveTokens; on a 1M-window model
+     *  the default reserve (16k) means compaction never fires and the
+     *  session balloons (observed: 400k+ tokens rewritten into prompt cache
+     *  on every waking — the dominant Bedrock cost). We derive reserveTokens
+     *  as contextWindow - maxContextTokens so the soul's memory compresses
+     *  around this ceiling regardless of how huge the model's window is. */
+    maxContextTokens?: number;
+    /** How much recent conversation survives compaction verbatim (default 20_000). */
+    keepRecentTokens?: number;
   };
   loop: {
     defaultSleepMinutes: number; // if the agent forgets to call sleep
