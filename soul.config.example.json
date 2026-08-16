@@ -9,13 +9,13 @@
     "keepRecentTokens": 20000
   },
   "loop": {
-    "defaultSleepMinutes": 5,
-    "minSleepMinutes": 2,
-    "maxSleepMinutes": 5,
-    "errorSleepMinutes": 10,
+    "defaultSleepMinutes": 10,
+    "minSleepMinutes": 5,
+    "maxSleepMinutes": 15,
+    "errorSleepMinutes": 15,
     "nightStartHour": 0,
     "nightEndHour": 7,
-    "nightMaxSleepMinutes": 15
+    "nightMaxSleepMinutes": 30
   },
   "body": {
     "name": "StackChan(狗蛋的身体)",
@@ -48,5 +48,9 @@
   ],
   "shell": {
     "enabled": false
+  },
+  "budget": {
+    "maxWakesPerDay": 120,
+    "hungrySleepMinutes": 60
   }
 }
