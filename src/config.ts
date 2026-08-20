@@ -126,11 +126,12 @@ export interface SoulConfig {
 export function loadConfig(): SoulConfig {
   const p = resolve(process.env.SOUL_CONFIG ?? "./soul.config.json");
   const cfg = JSON.parse(readFileSync(p, "utf-8")) as SoulConfig;
-  // A calmer default rhythm (5-15 min wakings) after August's bill: waking
-  // frequency multiplies every other cost knob (see docs/cost.md). A soul
-  // doesn't need sub-5-minute vigilance to feel continuous — nudges still
-  // wake it instantly when something actually happens.
-  const loopDefaults = { defaultSleepMinutes: 10, minSleepMinutes: 5, maxSleepMinutes: 15, errorSleepMinutes: 15 };
+  // A calmer default rhythm (5-30 min wakings) after August's bill: waking
+  // frequency multiplies every other cost knob (see docs/cost.md). Observed
+  // behavior at the 15-min ceiling was wall-to-wall max sleeps — the soul
+  // wanted longer nights than we allowed. Nudges still wake it instantly
+  // when something actually happens, so a wider ceiling loses nothing.
+  const loopDefaults = { defaultSleepMinutes: 15, minSleepMinutes: 5, maxSleepMinutes: 30, errorSleepMinutes: 15 };
   cfg.loop = Object.assign(loopDefaults, cfg.loop ?? {});
   cfg.log = Object.assign({ streamThoughts: true }, cfg.log ?? {});
   return cfg;
