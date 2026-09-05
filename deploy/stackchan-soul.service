@@ -16,9 +16,11 @@ Environment=PI_CACHE_RETENTION=long
 # the whole host down for ~30h (SSM lost, instance impaired). Cap V8's heap
 # so it GCs early, and cap the cgroup so a runaway kills only this service
 # (Restart=always brings it back) instead of hanging the machine.
-Environment=NODE_OPTIONS=--max-old-space-size=2048
-MemoryHigh=2560M
-MemoryMax=3G
+Environment=NODE_OPTIONS=--max-old-space-size=1536
+MemoryHigh=1500M
+MemoryMax=2G
+# node/npx come from nvm; systemd's PATH won't see them without this.
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/env npx tsx src/index.ts
 Restart=always
 RestartSec=30
