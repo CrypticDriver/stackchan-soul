@@ -11,6 +11,14 @@ Environment=SOUL_CONFIG=/home/ubuntu/stackchan-soul/soul.config.json
 # context into cache (~$250/day observed). With 1h retention the wakings
 # within each hour become cache reads. See docs/cost.md.
 Environment=PI_CACHE_RETENTION=long
+# Memory guardrails. On 2026-09-04 the node process ballooned (total-vm 13GB
+# on a 7.7GB box), the kernel OOM-killed it twice, and the second kill took
+# the whole host down for ~30h (SSM lost, instance impaired). Cap V8's heap
+# so it GCs early, and cap the cgroup so a runaway kills only this service
+# (Restart=always brings it back) instead of hanging the machine.
+Environment=NODE_OPTIONS=--max-old-space-size=2048
+MemoryHigh=2560M
+MemoryMax=3G
 ExecStart=/usr/bin/env npx tsx src/index.ts
 Restart=always
 RestartSec=30
