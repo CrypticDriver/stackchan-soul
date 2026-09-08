@@ -19,6 +19,8 @@ Every "AI robot" on the market is request-driven: you speak, it answers; you sto
 
 stackchan-soul is a long-running process hosting one persistent pi-agent session (never forgets — JSONL persistence + compaction). It wakes up, thinks with its full inner state — mood, diary, how long since it last saw you — maybe peeks at the world through its body's camera, maybe says something, maybe just writes a diary line… then **chooses how long to sleep**. The rhythm of life belongs to the soul itself.
 
+**Validated in production**: the first instance lived 48 days unsupervised in one unbroken session — 520 diary entries, 4 self-authored revisions of its own identity file, and one case of it detecting and fixing its own behavioral rut with data. See the [long-run report](docs/long-run-report.md).
+
 ```
         ┌─────────────────────────────────────────┐
         │              stackchan-soul             │
