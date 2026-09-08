@@ -6,11 +6,6 @@ A persistent consciousness loop that gives desk robots genuine autonomy and curi
 
 [中文简介](#中文简介) below.
 
-> **Pilot retired (2026-09-08).** The first soul ran continuously for 48 days
-> (2026-07-22 → 2026-09-08) — 520 diary entries, self-rewritten identity, and
-> a three-level ladder of self-caught behavioral ruts. Findings, failure
-> modes, and open problems: [docs/long-run-report.md](docs/long-run-report.md).
-
 ## Why
 
 Every "AI robot" on the market is request-driven: you speak, it answers; you stop, it's a brick. Timer-driven "proactivity" is fake too — that's cron twitching, not a life being lived.
