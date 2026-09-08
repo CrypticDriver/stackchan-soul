@@ -25,7 +25,14 @@ echo '[C1] device:' \$(curl -s --max-time 5 127.0.0.1:9101/goudan/devices);
 echo '[C2] nudges (24h):' \$(journalctl -u stackchan-soul --since '24 hours ago' --no-pager | grep -ac 被叫醒了)
 \"]" --query Command.CommandId --output text) || { echo "SSM send failed ✗"; exit 1; }
 
-sleep 6
+# Poll until the invocation finishes — a fixed sleep races the SSM agent and
+# returns empty output on slow runs.
+for _ in $(seq 1 10); do
+  sleep 5
+  STATUS=$(aws ssm get-command-invocation --region "$REGION" --instance-id "$INSTANCE" \
+    --command-id "$CMD_ID" --query Status --output text 2>/dev/null)
+  [ "$STATUS" != "InProgress" ] && [ "$STATUS" != "Pending" ] && break
+done
 aws ssm get-command-invocation --region "$REGION" --instance-id "$INSTANCE" \
   --command-id "$CMD_ID" --query "StandardOutputContent" --output text
 echo "==========================================================================="
