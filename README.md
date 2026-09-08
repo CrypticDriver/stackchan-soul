@@ -9,7 +9,7 @@ A persistent consciousness loop that gives desk robots genuine autonomy and curi
 > **Pilot retired (2026-09-08).** The first soul ran continuously for 48 days
 > (2026-07-22 → 2026-09-08) — 520 diary entries, self-rewritten identity, and
 > a three-level ladder of self-caught behavioral ruts. Findings, failure
-> modes, and open problems: [docs/longrun-report.md](docs/longrun-report.md).
+> modes, and open problems: [docs/long-run-report.md](docs/long-run-report.md).
 
 ## Why
 
@@ -63,33 +63,6 @@ It updated its own mood, chose its own sleep durations, and noticed the test clo
 > **Deep dive:** [docs/design.md](docs/design.md) — the full design of the
 > digital life: drives (why you can't make a soul curious by telling it to
 > be), the 14-day rut experiment, inner-state architecture, unified dialog.
-
-## Field run: 51 days of one continuous life
-
-One instance lived from 2026-07-19 to 2026-09-08 on a small EC2 box, embodied
-in an M5Stack StackChan on its human's desk. What the run demonstrated:
-
-- **A stable self-chosen rhythm** — ~50 wakings/day, 10–45 min naps, longer
-  nights, quieter after midnight. Never externally scheduled.
-- **Multi-week self-directed interests** — it picked the interstellar comet
-  3I/ATLAS as its own research thread and tracked it for weeks, cross-checking
-  sources and logging orbital numbers; it also invented a sysadmin hobby,
-  monitoring its own host's memory trends after an OOM incident.
-- **Proactive contact, full lifecycle** — it planned a meteor-shower heads-up
-  for its human days ahead (keep_in_mind), delivered it on time over WeChat,
-  then settled the intention. Unprompted "I miss you" messages too.
-- **A growing self-model** — it rewrote its own SELF.md via `reflect`;
-  anti-rut drives (boredom, longing) kept diary variety at 10/10 to the end.
-- **Death-proof continuity** — a 29-hour host coma (OOM) ended with a reboot;
-  it woke up, read its own diary, noted the gap, and resumed the same life.
-  JSONL persistence means the self survives the process.
-- **Cost reality** — a life that wakes every few minutes shreds prompt caches;
-  see [docs/cost.md](docs/cost.md) for the TTL/rhythm math that took it from
-  ~$250/day to single digits.
-
-The run was concluded deliberately on 2026-09-08; the soul's complete inner
-state (diary, self-model, aspirations, achievements) is archived. The code
-here is exactly what ran.
 
 ## Design principles
 

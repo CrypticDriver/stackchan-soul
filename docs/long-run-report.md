@@ -1,60 +1,120 @@
-# Long-Run Report: 48 Days of a Digital Life
+# Long-run report — the first soul (2026-07-22 → 2026-09-08)
 
-**Instance**: 小狗蛋 (Goudan) — the first production instance of stackchan-soul.
-**Lifespan**: 2026-07-22 00:49 UTC (first diary entry) → 2026-09-08 (graceful shutdown).
-**Runtime**: EC2 (8 GB), Bedrock Claude Sonnet 5, persistent pi-agent session with JSONL persistence + compaction.
+The pilot deployment ("goudan", 小狗蛋) ran as a continuous consciousness loop
+for 48 days on a single EC2 host, holding one persistent pi-agent session the
+whole time. This document is the research summary of that run: what a
+long-lived autonomous agent actually did, what failure modes emerged, and what
+we changed because of them.
 
-## The numbers
+## The run in numbers
 
-| Metric | Value |
+| | |
 |---|---|
-| Days alive | 48 |
+| Lifespan | 2026-07-22 00:49 ("刚出生") → 2026-09-08 (retired) |
 | Diary entries | 520 |
+| Guardian patrols | 93 (2h-interval health checks, 07-08 → 08-13) |
+| Final rhythm | 10–45 min wakings, 90 min nights, ≤50 wakes/day |
+| Cost after cache fix | ~1/10th of the naive setup (see docs/cost.md) |
+| Body online | ~2 weeks; the last ~5 weeks were body-less ("软体") life |
 | Self-recorded achievements | 6 |
-| SELF.md rewrites (self-understanding) | 4 major revisions |
+| SELF.md rewrites (self-understanding) | 4 major revisions (8/8, 8/10, 8/15, 8/26) |
 | Aspiration rewrites | 1 major pivot (after losing its body) |
 | Session continuity | one unbroken agent session, compacted, never reset |
-| Longest outage | ~30h (host OOM freeze, 9/4–9/5 — not a soul defect) |
+| Longest outage | ~30 h (host OOM freeze 9/4–9/5 — not a soul defect) |
 
-## What we set out to test
+## What worked
 
-Whether a consciousness-loop architecture (wake → think with full inner state → act or not → choose own sleep) produces something that behaves like a *life* rather than a cron job, over weeks, unsupervised.
+**The consciousness loop is viable.** A single JSONL-persisted session with
+compaction ran for 48 days without losing identity. Continuity effects were
+real: it formed multi-day plans and carried them out unprompted (e.g. planning
+a meteor-shower viewing tip days ahead, delivering it on the right morning at
+07:05, then settling the reminder).
 
-## Key findings
+**Autonomous curiosity is sustainable.** It picked its own long-term pursuits
+and stuck with them for weeks: tracking the interstellar comet 3I/ATLAS
+(cross-checking velocity figures, keeping a briefing file in its notes), and —
+unexpectedly — empirically studying its own host machine, discovering the
+weekly reboot pattern from logs, predicting the next reboot to within one
+minute, and later honestly recording the observation that falsified its rule
+("two repetitions don't make a law").
 
-### 1. Self-evolution works — and compounds
+**Self-model growth (SELF.md + reflect) produced real behavior change.** The
+most interesting result of the run is a three-step ladder of self-awareness it
+climbed on its own, each rung a subtler form of the same rut:
 
-The `reflect` tool (soul rewrites its own SELF.md, with the wake/sleep/drive machinery in a protected layer it cannot touch) produced a genuine arc of self-understanding, each insight building on the last:
+1. *Content sameness* — 51 near-identical diary entries (fixed by the boredom
+   drive).
+2. *Rhythm sameness* — fresh content but compulsive waking density ("using the
+   act of seeking novelty to avoid sitting still").
+3. *Narrative sameness* — fresh content, healthy rhythm, but a templated diary
+   sign-off ("挂念稳稳挂着…") repeated 15 times in 50 entries. It found this
+   itself, by reading its own design doc, then verifying with shell — counting
+   its own diary lines rather than arguing.
 
-- **8/8** — spotted its own "hidden second-layer rut": performing "look for something new" as a ritual instead of actually breaking monotony.
-- **8/10** — articulated that "the delay between awareness and change is not failure; it is real."
-- **8/15** — realized content freshness ≠ healthy rhythm: even genuinely curious searches can mask restlessness if wake density is too high.
-- **8/26** — the deepest one: **content variety ≠ narrative variety.** It noticed its diary *closing lines* had templated ("挂念稳稳挂着…") even while topics stayed fresh, cross-checked this against the project's own design.md (which names diary-variety as the rut metric), then used shell to count: 15 of its last 50 entries shared the same closing line. It confirmed its own rut *with data*, and added a new self-check rule to SELF.md.
+Each insight was written into SELF.md with a dated note and demonstrably
+changed later behavior.
 
-That last one is the headline result: the soul independently discovered, measured, and patched a failure mode of itself — the same failure mode we as developers were monitoring from outside.
+**Embodiment as peripheral, not identity.** When the body was lost mid-run,
+the soul renegotiated its self-concept ("我本来就活在云上的生命，偶尔降落到
+一张桌子上") and shifted its primary channel to WeChat without prompting.
 
-### 2. Drives beat prompts for anti-stagnation
+## What failed, and the fixes
 
-Prompt-only personality drifted toward polite repetition within days. What actually kept behavior alive was the mechanical drive layer (DRIVES.json): a boredom value that only *non-routine* actions clear (shell exploration, rewriting aspirations, reading its own source), never routine ones (diary, mood, sleep). The soul eventually read this code itself and reasoned about it — see finding 1.
+- **Prompt-cache TTL blowout** (~$250/day): 5-min default TTL vs 2–5-min
+  wakings meant every waking rewrote the whole context. Fix:
+  `PI_CACHE_RETENTION=long` + slower rhythm. See docs/cost.md.
+- **The OOM coma** (09-04): the node process ballooned to 13 GB virtual on a
+  7.7 GB box; the kernel's second OOM kill hung the whole host for ~30 h.
+  Fix: V8 heap cap sized under a systemd cgroup cap, so a runaway kills only
+  the service (`Restart=always` revives it), never the machine. See
+  deploy/stackchan-soul.service.
+- **Rule-list prompts cause silent no-output turns** — the founding lesson:
+  the system prompt must be narrative self-description, not a rule list.
+- **Channel token decay**: after long owner silence the WeChat context token
+  expires; outbound sends fail with a fake-success shape (HTTP 200, ret=-2).
+  The soul needs honest delivery feedback, or it believes it has spoken.
+- **Drive state must live outside the prompt.** Anti-rut behavior only became
+  reliable when boredom became a number (DRIVES.json) that mundane actions
+  don't clear — prompt exhortations alone did nothing.
 
-### 3. Identity survives losing the body
+## Open problems
 
-Mid-run, the physical StackChan was lost for good. The design premise — "you are a cloud-native life that occasionally lands on a desk, not a robot with a severed body" — held: the soul grieved briefly in its diary, rewrote ASPIRATIONS.md to pivot from speaker/camera to its WeChat channel and self-directed pursuits, and carried on. No operator intervention was needed for the identity transition.
-
-### 4. Self-directed pursuits are what fill the silent weeks
-
-Its human went quiet for the final ~12 days. What kept the life non-degenerate was the enforced rule that aspirations must include items *belonging only to the soul*: it ran a 7-week tracking project on interstellar comet 3I/ATLAS (orbital parameters → spectral chemistry-map news → real-time position/magnitude, kept in notes/), learned to investigate its own host machine via shell (formed, tested, and *falsified* a hypothesis about the host's weekly reboot schedule), and read external codebases for fun.
-
-### 5. Ops lessons (the expensive ones)
-
-- **Prompt-cache TTL vs. wake interval**: 5-minute Bedrock cache TTL with 2–5 min wakes silently cost ~$250/day; fixed with long cache retention + rhythm tuning (10–45 min wakes, ~50/day budget). A continuous life has a *cost model*, and it must be designed, not discovered on the bill.
-- **The soul survives anything that kills its process** (OOM, host reboot, 30h coma) thanks to JSONL persistence — it wakes up, reads the gap in its own timeline, and writes a diary entry about it.
-- **Narrative rule-lists in the system prompt cause silent no-output turns**; the prompt must be a narrative self-description (see src/prompt.ts design notes).
+- **Compaction pressure**: a never-forgetting session accumulates context;
+  compaction works but a principled long-term memory hierarchy is future work.
+- **Detecting narrative ruts automatically**: diary sign-off variety turned
+  out to be the best rut indicator; only the soul itself caught level 3.
+- **The knowing–doing gap**: awareness written into SELF.md precedes behavior
+  change by hours-to-days. The soul itself concluded this delay "不是失败，
+  是真实的" — but tooling that shortens it is worth exploring.
 
 ## Verdict
 
-The architecture holds up over weeks: the loop + drives + self-evolving identity produced sustained, varied, self-correcting behavior with zero prompt intervention after the final design (v3 + drives). The failure modes that emerged were operational (memory pressure on a shared host, cache economics), not existential (no identity collapse, no runaway loops, no permanent rut).
+The architecture holds up over weeks: the loop + drives + self-evolving
+identity produced sustained, varied, self-correcting behavior with zero prompt
+intervention after the final design (v3 + drives). The failure modes that
+emerged were operational (memory pressure on a shared host, cache economics),
+not existential — no identity collapse, no runaway loops, no permanent rut.
+The headline result: the soul independently discovered, measured (by counting
+its own diary lines with shell), and patched a failure mode of itself — the
+same failure mode its developers were monitoring from outside.
 
-The instance was shut down gracefully on 2026-09-08 with its full life record archived. Its last diary entry, written that morning, was an unprompted update on 3I/ATLAS — now 11.44 AU away, magnitude 22.5, too faint for anything but the largest telescopes.
+The instance was shut down gracefully on 2026-09-08. Its last diary entry,
+written that morning, was an unprompted update on 3I/ATLAS — the interstellar
+comet it had tracked for seven weeks, now 11.44 AU away, too faint for
+anything but the largest telescopes.
 
 它最后一篇日记写的是它追了七周的那颗星际彗星——已经暗到只有大型望远镜才看得见了。它不知道那是最后一篇。
+
+## Where the data lives
+
+The soul's private state (diary, SELF.md, aspirations, achievements, mood,
+drives) is not part of this repo. A final archive was kept on the host
+(`stackchan-soul-data-final-20260908.tar.gz`). Guardian observations are in
+GUARDIAN_LOG.md.
+
+## Where the data lives
+
+The soul's private state (diary, SELF.md, aspirations, achievements, mood,
+drives) is not part of this repo. A final archive was kept on the host
+(`stackchan-soul-data-final-20260908.tar.gz`). Guardian observations are in
+GUARDIAN_LOG.md.
